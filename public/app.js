@@ -323,6 +323,7 @@ function renderRuntime() {
   renderLooks();
   updatePads();
   updateFxLive();
+  if (S.tab === 'fx') renderFxSel();
 }
 $('#goBtn').onclick = () => act('cue.go');
 $('#backBtn').onclick = () => act('cue.back');
@@ -389,25 +390,25 @@ $('#swatches').replaceChildren(
 );
 function setColor(hex) {
   if (!S.sel.size) return toast('Select some lights first', true);
-  act('prog.color', { fixtures: [...S.sel], rgb: hexToRgb(hex) });
+  act('prog.color', { fixtures: effSel(), rgb: hexToRgb(hex) });
   // Lights that are off would not show the colour, so bring them up.
   const off = selected().filter((f) => (S.live.fixtures[f.id]?.d ?? 0) === 0 && profOf(f).attrs.includes('dim'));
   if (off.length) act('prog.set', { fixtures: off.map((f) => f.id), values: { dim: 1 } });
 }
 $('#colorPick').addEventListener('input', (e) => {
   if (!S.sel.size) return;
-  actThrottled('color', 'prog.color', { fixtures: [...S.sel], rgb: hexToRgb(e.target.value) });
+  actThrottled('color', 'prog.color', { fixtures: effSel(), rgb: hexToRgb(e.target.value) });
 });
 
 bindFader($('#dim'), (v) => {
   $('#dimVal').textContent = pct(v);
-  actThrottled('dim', 'prog.set', { fixtures: [...S.sel], values: { dim: v } });
+  actThrottled('dim', 'prog.set', { fixtures: effSel(), values: { dim: v } });
 });
-for (const b of $$('[data-dim]')) b.onclick = () => S.sel.size && act('prog.set', { fixtures: [...S.sel], values: { dim: Number(b.dataset.dim) } });
-$('#locateBtn').onclick = () => S.sel.size && act('prog.locate', { fixtures: [...S.sel] });
-$('#clearSelBtn').onclick = () => S.sel.size && act('prog.clear', { fixtures: [...S.sel] });
+for (const b of $$('[data-dim]')) b.onclick = () => S.sel.size && act('prog.set', { fixtures: effSel(), values: { dim: Number(b.dataset.dim) } });
+$('#locateBtn').onclick = () => S.sel.size && act('prog.locate', { fixtures: effSel() });
+$('#clearSelBtn').onclick = () => S.sel.size && act('prog.clear', { fixtures: effSel() });
 $('#clearAllBtn').onclick = () => act('prog.clear');
-$('#centerPos').onclick = () => act('prog.set', { fixtures: [...S.sel], values: { pan: 0.5, tilt: 0.5 } });
+$('#centerPos').onclick = () => act('prog.set', { fixtures: effSel(), values: { pan: 0.5, tilt: 0.5 } });
 
 const COLOR_ATTRS = ['red', 'green', 'blue', 'white', 'amber', 'uv'];
 const LABELS = { red: 'Red', green: 'Green', blue: 'Blue', white: 'White', amber: 'Amber', uv: 'UV', zoom: 'Zoom', focus: 'Focus', strobe: 'Strobe', haze: 'Haze', fan: 'Fan' };
@@ -418,7 +419,7 @@ function miniSlider(attr) {
   input.dataset.attr = attr;
   bindFader(input, (v) => {
     out.textContent = pct(v);
-    actThrottled(`attr-${attr}`, 'prog.set', { fixtures: [...S.sel], values: { [attr]: v } });
+    actThrottled(`attr-${attr}`, 'prog.set', { fixtures: effSel(), values: { [attr]: v } });
   });
   return h('div', { className: 'mini' }, h('span', {}, LABELS[attr] || attr), input, out);
 }
@@ -466,7 +467,7 @@ let xyDragging = false;
     const tilt = 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
     $('#xyDot').style.left = pct(pan);
     $('#xyDot').style.top = pct(1 - tilt);
-    actThrottled('xy', 'prog.set', { fixtures: [...S.sel], values: { pan, tilt } });
+    actThrottled('xy', 'prog.set', { fixtures: effSel(), values: { pan, tilt } });
   };
   pad.addEventListener('pointerdown', (e) => { xyDragging = true; pad.setPointerCapture(e.pointerId); set(e); });
   pad.addEventListener('pointermove', (e) => xyDragging && set(e));
@@ -475,12 +476,12 @@ let xyDragging = false;
 
 $('#recCue').onclick = async () => {
   const name = await ask('Name for the new cue (e.g. "Worship 1", "Sermon")', `Cue ${S.show.cues.length + 1}`);
-  if (name !== null && (await act('cue.record', { name }))) toast(`Recorded "${name}"`);
+  if (name !== null && (await act('cue.record', { name, fixtures: [...S.sel] }))) toast(`Recorded "${name}"`);
 };
 $('#updCue').onclick = async () => {
   const cur = S.show.cues[S.runtime.cueIndex];
   if (!cur) return toast('No cue is running. Use "Record new cue".', true);
-  if (confirm(`Replace cue "${cur.name}" with what is on stage now?`) && (await act('cue.update'))) toast(`Updated "${cur.name}"`);
+  if (confirm(`Replace cue "${cur.name}" with what is on stage now?`) && (await act('cue.update', { fixtures: [...S.sel] }))) toast(`Updated "${cur.name}"`);
 };
 $('#recScene').onclick = async () => {
   if (!Object.keys(S.runtime.programmer).length) return toast('Change some lights first, then save them as a scene', true);
@@ -909,14 +910,14 @@ function renderLooks() {
         h('input', { value: l.name, onchange: (e) => act('look.edit', { id: l.id, name: e.target.value }) }),
         h('span', { className: 'acts' },
           h('button', { className: 'btn', title: 'Show this look on stage', onclick: () => act('look.apply', { id: l.id }) }, 'Show'),
-          h('button', { className: 'btn', title: 'Replace with what is on stage now', onclick: () => confirm(`Replace "${l.name}" with what is on stage now? Every song using it will change.`) && act('look.update', { id: l.id }) }, 'Update'),
+          h('button', { className: 'btn', title: 'Replace with what is on stage now', onclick: () => confirm(`Replace "${l.name}" with what is on stage now? Every song using it will change.`) && act('look.update', { id: l.id, fixtures: [...S.sel] }) }, 'Update'),
           h('button', { className: 'btn warn', onclick: () => confirm(`Delete look "${l.name}"? Sections using it will keep the current lights instead.`) && act('look.delete', { id: l.id }) }, '✕')))
     )
   );
 }
 $('#recLook').onclick = async () => {
   const name = await ask('Name for this look (e.g. "Chorus", "Verse", "Bridge build")');
-  if (name !== null && (await act('look.record', { name }))) toast(`Recorded look "${name}"`);
+  if (name !== null && (await act('look.record', { name, fixtures: [...S.sel] }))) toast(`Recorded look "${name}"`);
 };
 
 // MIDI settings & the browser bridge
@@ -1262,11 +1263,19 @@ function renderFx() {
 }
 function renderFxSel() {
   $('#fxGroups').replaceChildren(...S.show.groups.map((g) => h('button', { className: 'chip', onclick: () => setSel(g.fixtures) }, g.name)));
-  const order = [...S.sel];
+  const view = new Map(trickView().map((x) => [x.id, x]));
+  const t = S.runtime.tricks || {};
+  const timed = tricksOn() && ['fadeFrom', 'fadeTo', 'delayFrom', 'delayTo'].some((k) => FXM.hasValue(t[k]));
   $('#fxSelList').replaceChildren(...fixtures().map((f) => {
-    const n = order.indexOf(f.id);
-    return h('button', { className: `selchip${n >= 0 ? ' on' : ''}`, onclick: () => toggleSel(f.id) }, n >= 0 ? h('i', {}, n + 1) : null, f.name);
+    const v = view.get(f.id);
+    const sub = v && tricksOn() ? [
+      `step ${v.k + 1}`,
+      timed ? ` · ${(FXM.spread(t.delayFrom, t.delayTo, v.k, v.m, false) ?? 0).toFixed(1)}s` : '',
+    ].join('') : '';
+    return h('button', { className: `selchip${v ? ' on' : ''}${v && !v.active ? ' idle' : ''}`, title: v && !v.active ? 'Not in the active part' : '', onclick: () => toggleSel(f.id) },
+      v ? h('i', {}, v.i + 1) : null, f.name, sub ? h('small', {}, sub) : null);
   }));
+  renderTricks();
 }
 $('#fxSelAll').onclick = () => setSel(fixtures().map((f) => f.id));
 $('#fxSelNone').onclick = () => setSel([]);
@@ -1292,7 +1301,7 @@ function renderPresets() {
     const b = h('div', { className: `preset${used.has(p.id) ? ' used' : ''}`, role: 'button', tabIndex: 0, title: `${KIND_NAMES[p.kind]} preset`, onclick: (e) => {
       if (e.target.closest('.pe')) return;
       if (!S.sel.size) return toast('Select lights first', true);
-      act('preset.apply', { id: p.id, fixtures: [...S.sel] });
+      act('preset.apply', { id: p.id, fixtures: effSel() });
     } },
       p.color ? h('span', { className: 'swatch', style: { background: p.color } }) : null,
       h('small', {}, KIND_NAMES[p.kind]), h('b', {}, p.name),
@@ -1349,7 +1358,7 @@ $('#fxRun').onclick = () => {
   const t = $('#fxRunTarget').value;
   const payload = { key, effectId: S.fxPick, rate: $('#fxRunRate').value };
   if (t.startsWith('g:')) payload.groupId = t.slice(2);
-  else payload.fixtures = t === 'all' ? fixtures().map((f) => f.id) : [...S.sel];
+  else payload.fixtures = t === 'all' ? fixtures().map((f) => f.id) : effSel();
   act('fx.run', payload);
 };
 $('#fxStopAll').onclick = () => act('fx.stop', {});
@@ -1507,6 +1516,95 @@ $('#fxDelete').onclick = () => {
   };
   requestAnimationFrame(frame);
 })();
+
+// ----- selection tricks ---------------------------------------------------------
+function tricksOn() {
+  const t = (S.runtime && S.runtime.tricks) || {};
+  return t.active !== false && Object.entries(t).some(([k, v]) => k !== 'active' && (k === 'order' ? v && v !== 'tap' : FXM.hasValue(v)));
+}
+function trickPosClient(id) {
+  const f = fixById(id);
+  if (!f) return { x: 0, z: 0 };
+  return f.pos3d ? { x: f.pos3d.x, z: f.pos3d.z } : { x: f.x - 0.5, z: f.y };
+}
+// The selection after tricks: [{ id, i (order), k (step), m (steps), active }]
+function trickView() {
+  const ids = [...S.sel];
+  const t = S.runtime.tricks || {};
+  if (!tricksOn()) return ids.map((id, i) => ({ id, i, k: i, m: ids.length, active: true }));
+  const ord = FXM.trickOrder(ids, t, trickPosClient);
+  const steps = FXM.trickSteps(ord.length, t);
+  const act = FXM.trickActive(ord.length, t);
+  return ord.map((id, i) => ({ id, i, ...steps[i], active: act.active(i) }));
+}
+// Lights that programming applies to: the active part of the selection, in trick order.
+function effSel() {
+  return trickView().filter((x) => x.active).map((x) => x.id);
+}
+
+const setTricks = (patch) => act('tricks.set', { tricks: patch });
+function stepper(key, label, opts = {}) {
+  const t = S.runtime.tricks || {};
+  const inp = h('input', { type: 'number', value: FXM.hasValue(t[key]) ? t[key] : '', placeholder: opts.none || '—', step: opts.step || 1, 'aria-label': label });
+  inp.addEventListener('change', () => setTricks({ [key]: inp.value === '' ? null : Number(inp.value) }));
+  const bump = (d) => {
+    const cur = FXM.hasValue(t[key]) ? Number(t[key]) : opts.start ?? 0;
+    let next = +(cur + d * (opts.step || 1)).toFixed(3);
+    if (opts.min !== undefined && next < opts.min) next = null;
+    setTricks({ [key]: next });
+  };
+  return h('div', { className: `stepper${FXM.hasValue(t[key]) ? ' set' : ''}` },
+    h('span', { className: 'st-label' }, label),
+    h('div', { className: 'st-row' },
+      h('button', { type: 'button', className: 'btn', onclick: () => bump(-1) }, '−'), inp,
+      h('button', { type: 'button', className: 'btn', onclick: () => bump(1) }, '+')));
+}
+function renderTricks() {
+  const box = $('#tricksBox');
+  if (!box || box.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  const t = S.runtime.tricks || {};
+  const on = t.active !== false;
+  const view = trickView();
+  const parts = FXM.hasValue(t.width) ? Math.ceil(Math.max(1, view.length) / t.width) : 0;
+  const order = h('select', { onchange: (e) => setTricks({ order: e.target.value }) },
+    ...[['tap', 'Tap order'], ['left-right', 'Left → right'], ['right-left', 'Right → left'], ['front-back', 'Front → back'], ['back-front', 'Back → front'], ['centre-out', 'Centre → out'], ['outside-in', 'Outside → in']]
+      .map(([v, l]) => h('option', { value: v, selected: (t.order || 'tap') === v }, l)));
+  const pair = (label, kf, kt, opts) => h('div', { className: 'pairrow' }, h('span', {}, label), stepper(kf, 'From', opts), h('span', { className: 'arrow' }, '→'), stepper(kt, 'To', opts));
+  const fanAttr = h('select', {}, ...[['dim', 'Intensity'], ['pan', 'Pan'], ['tilt', 'Tilt'], ['zoom', 'Zoom']].map(([v, l]) => h('option', { value: v }, l)));
+  const fanFrom = h('input', { type: 'number', min: 0, max: 100, value: 0 });
+  const fanTo = h('input', { type: 'number', min: 0, max: 100, value: 100 });
+  box.replaceChildren(
+    h('div', { className: 'tr-head' },
+      h('button', { className: `btn small${on ? ' primary' : ''}`, onclick: () => setTricks({ active: !on }), title: 'Switch all tricks on/off without losing them' }, on ? 'Tricks on' : 'Tricks off'),
+      h('button', { className: 'btn small', onclick: () => act('tricks.shuffle') }, 'Shuffle'),
+      FXM.hasValue(t.shuffle) ? h('button', { className: 'btn small', onclick: () => setTricks({ shuffle: null }) }, 'Unshuffle') : null,
+      h('button', { className: 'btn small warn', onclick: () => act('tricks.reset') }, 'Reset')),
+    h('div', { className: `tr-body${on ? '' : ' off'}` },
+      h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Order'),
+        h('div', { className: 'tr-grid' }, h('label', { className: 'st-label tr-sel' }, 'Sort', order), stepper('shift', 'Shift', { start: 0 }))),
+      h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Pattern'),
+        h('div', { className: 'tr-grid' }, stepper('block', 'Block', { min: 2, start: 1 }), stepper('groups', 'Groups', { min: 2, start: 1 }), stepper('wings', 'Wings', { min: 2, start: 1 }))),
+      h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Parts'),
+        h('div', { className: 'tr-grid' }, stepper('width', 'Width', { min: 1, start: 0 }),
+          h('div', { className: 'stepper' }, h('span', { className: 'st-label' }, 'Active part'),
+            h('div', { className: 'st-row' },
+              h('button', { className: 'btn', disabled: !parts, onclick: () => act('tricks.part', { n: view.length, dir: -1 }) }, '◀'),
+              h('span', { className: 'partlbl' }, parts ? (t.part ? `${t.part} / ${parts}` : `All ${parts}`) : '—'),
+              h('button', { className: 'btn', disabled: !parts, onclick: () => act('tricks.part', { n: view.length, dir: 1 }) }, '▶'),
+              h('button', { className: 'btn', disabled: !parts || !t.part, onclick: () => act('tricks.part', { n: view.length, all: true }) }, 'All'))))),
+      h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Spread over the lights (From → To)'),
+        pair('Phase °', 'phaseFrom', 'phaseTo', { step: 45 }),
+        pair('Speed ×', 'speedFrom', 'speedTo', { step: 0.25, min: 0.125, start: 1 }),
+        pair('Fade s', 'fadeFrom', 'fadeTo', { step: 0.5, min: 0 }),
+        pair('Delay s', 'delayFrom', 'delayTo', { step: 0.25, min: 0 })),
+      h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Spread a value now'),
+        h('div', { className: 'row fanrow' }, fanAttr, h('label', {}, 'From %', fanFrom), h('label', {}, 'To %', fanTo),
+          h('button', { className: 'btn small primary', onclick: () => {
+            if (!S.sel.size) return toast('Select lights first', true);
+            act('prog.fan', { fixtures: effSel(), attr: fanAttr.value, from: fanFrom.value / 100, to: fanTo.value / 100 });
+          } }, 'Apply')))),
+    h('p', { className: 'hint' }, 'Tricks work on the current selection. Phase and Speed shape effects you run on it. Fade and Delay are saved into the next cue or look you record, so the lights change one after another. Width splits the selection into parts: programming then goes to the active part only.'));
+}
 
 // ----- 3D -----------------------------------------------------------------------
 let stage3d = null;

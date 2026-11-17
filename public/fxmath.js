@@ -67,8 +67,12 @@
   }
 
   // Evaluate every layer for light i of n. Returns [{ layer, w, value }].
-  function evaluate(fx, i, n, cycles) {
-    const { phase, slots } = phaseOf(i, n, fx);
+  // ov (optional, from selection tricks): { phase, slots, speed } replaces the effect's own spread.
+  function evaluate(fx, i, n, cycles, ov) {
+    const own = phaseOf(i, n, fx);
+    const phase = ov && ov.phase !== undefined ? ov.phase : own.phase;
+    const slots = ov && ov.slots ? ov.slots : own.slots;
+    if (ov && ov.speed) cycles *= ov.speed;
     const dir = fx.dir === -1 ? -1 : 1;
     return (fx.layers || []).map((layer, li) => {
       const width = layer.width === 0 || layer.width === undefined ? (['square', 'pulse'].includes(layer.wave) ? 1 / Math.max(1, slots) : 0.5) : layer.width;
@@ -124,7 +128,85 @@
     { id: 'zoom-pulse', name: 'Zoom pulse', cat: 'beam', speed: { beats: 2 }, layers: [L({ attr: 'zoom', low: 0.15, high: 0.85 })] },
   ].map((e) => ({ builtin: true, phaseFrom: 0, phaseTo: 0, groups: 1, wings: 1, dir: 1, ...e }));
 
-  const api = { wave, phaseOf, cyclesAt, evaluate, hsvToRgb, hexToRgb, clamp01, WAVES, ATTRS, BUILTIN };
+  // ----- Selection tricks ----------------------------------------------------------
+  // t: { order, shift, shuffle, block, groups, wings, width, part, phaseFrom, phaseTo, speedFrom, speedTo,
+  //      fadeFrom, fadeTo, delayFrom, delayTo }  (null / undefined = not used)
+  const has = (v) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v));
+
+  function shuffled(list, seed) {
+    const out = list.slice();
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(hash(seed, i, 7) * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
+
+  // Put the lights in trick order. posOf(id) -> { x, z } stage position (x left/right, z front/back).
+  function trickOrder(ids, t, posOf) {
+    let list = ids.slice();
+    const o = t && t.order;
+    if (o && o !== 'tap' && posOf) {
+      const key = {
+        'left-right': (p) => p.x, 'right-left': (p) => -p.x,
+        'back-front': (p) => p.z, 'front-back': (p) => -p.z,
+        'centre-out': (p) => Math.hypot(p.x, p.z), 'outside-in': (p) => -Math.hypot(p.x, p.z),
+      }[o];
+      if (key) list = list.map((id, i) => ({ id, i, k: key(posOf(id) || { x: 0, z: 0 }) })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.id);
+    }
+    if (t && Number(t.shuffle) > 0) list = shuffled(list, Number(t.shuffle));
+    const sh = t && has(t.shift) ? Math.round(Number(t.shift)) : 0;
+    if (sh && list.length) {
+      const n = list.length;
+      const k = ((sh % n) + n) % n;
+      list = list.slice(k).concat(list.slice(0, k));
+    }
+    return list;
+  }
+
+  // Step number k (of m steps) for each position after block, groups and wings.
+  function trickSteps(n, t) {
+    const b = t && has(t.block) ? Math.max(1, Math.floor(t.block)) : 1;
+    const out = [];
+    let m = Math.ceil(n / b);
+    const g = t && has(t.groups) ? Math.max(1, Math.floor(t.groups)) : 0;
+    const w = t && has(t.wings) ? Math.max(1, Math.floor(t.wings)) : 1;
+    if (g) m = Math.min(m, g);
+    const L = w > 1 && m > 1 ? m / w : m; // wing length (can be fractional, e.g. 3 steps in 2 wings)
+    for (let i = 0; i < n; i++) {
+      let k = Math.floor(i / b);
+      if (g) k = k % g;
+      if (w > 1 && m > 1) {
+        const wing = Math.min(w - 1, Math.floor((k * w) / m));
+        let local = k - wing * L;
+        if (wing % 2 === 1) local = L - 1 - local;
+        k = Math.max(0, Math.round(local));
+      }
+      out.push({ k, m: w > 1 && m > 1 ? Math.ceil(L) : m });
+    }
+    return out;
+  }
+
+  // Which lights are in the active part (width + part). part 0 = all.
+  function trickActive(n, t) {
+    const width = t && has(t.width) ? Math.max(1, Math.floor(t.width)) : 0;
+    const part = t && has(t.part) ? Math.floor(t.part) : 0;
+    const parts = width ? Math.ceil(n / width) : 1;
+    return { parts, active: (i) => !width || !part || Math.floor(i / width) === (part - 1) % parts };
+  }
+
+  // Spread position 0..1 for step k of m; "full" spreads (0..360) use k/m so the ends do not overlap.
+  const spreadPos = (k, m, full) => (m <= 1 ? 0 : full ? k / m : k / (m - 1));
+
+  // Value spread From -> To at step k of m. If only one end is given, both ends use it.
+  function spread(from, to, k, m, full) {
+    if (!has(from) && !has(to)) return null;
+    const a = has(from) ? Number(from) : Number(to);
+    const b = has(to) ? Number(to) : Number(from);
+    return a + (b - a) * spreadPos(k, m, full);
+  }
+
+  const api = { trickOrder, trickSteps, trickActive, spread, spreadPos, hasValue: has, wave, phaseOf, cyclesAt, evaluate, hsvToRgb, hexToRgb, clamp01, WAVES, ATTRS, BUILTIN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.FXMath = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

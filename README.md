@@ -4,7 +4,7 @@ A simple, free lighting controller for churches. It runs on a Mac, and volunteer
 
 - **Songs that follow your backing tracks:** plan the lights for every Intro, Verse, Chorus and Bridge. **Playback** (MultiTracks) or **Ableton Live** triggers them over MIDI, or an operator taps them live, or a mix of both.
 - **3D stage view:** load your church as a 3D model (`.glb`, `.gltf`, `.obj`, `.3ds`), or import a whole rig from an **MVR** file. You see real coloured beams while you program and run the service.
-- **FX & Presets:** dimmer/colour/position/beam presets that cues stay linked to, about 25 ready-made effects (including moving-head circles, figure 8, ballyhoo and sweeps), and an effect builder with waveforms, phase spread, groups and wings.
+- **FX & Presets:** dimmer/colour/position/beam presets that cues stay linked to, about 25 ready-made effects (including moving-head circles, figure 8, ballyhoo and sweeps), and an effect builder with waveforms, phase spread, groups and wings, and **selection tricks** (sort, shift, shuffle, block, groups, wings, width/parts, and From→To spreads for phase, speed, fade, delay and values).
 - **Hot buttons:** Strobe and Flash on every screen, plus your own pads with keyboard shortcuts.
 - **Live control:** every group gets a fader, colour buttons, a Flash button and effects (pulse, chase, sparkle, rainbow, movement) locked to a tempo. The tempo comes from TAP, the song's BPM or Ableton's MIDI clock. This works on top of anything that's running.
 - **Live screen for volunteers:** a big **GO** button steps through the service cue list. Scene buttons ("Pulpit", "Baptism", "Worship wash") switch on over anything. There is a master fader and a blackout button.
@@ -116,6 +116,25 @@ The effect as a whole has a speed (beats per cycle, locked to the tempo, or time
 | **Direction** | Forward or backward |
 
 The bar preview shows the result as you change things, and changes save straight away, even while the effect is running.
+
+### Selection tricks
+
+The **Selection tricks** panel on the FX & Presets tab changes how the current selection is ordered and stepped through:
+
+| Control | What it does |
+|---|---|
+| **Sort** | Tap order, or by stage position: left→right, right→left, front→back, back→front, centre→out, outside→in |
+| **Shift** | Rotates the order (e.g. start the chase on light 3) |
+| **Shuffle** | Random but repeatable order; **Unshuffle** goes back |
+| **Block** | That many lights in a row share one step |
+| **Groups** | The pattern repeats every N steps (Groups 2 = odd/even) |
+| **Wings** | Mirrors the pattern (Wings 2 = from the middle out, symmetrical) |
+| **Width / Active part** | Splits the selection into parts of N lights; ◀ ▶ steps through them. Programming, presets and effects then go to the active part only. **All** clears it. |
+| **Phase / Speed From → To** | Spreads the phase (degrees) or the speed (× tempo) of effects you run on the selection. These override the effect's own spread. |
+| **Fade / Delay From → To** | Gives each light its own fade and delay in the next **cue or look** you record (or update), so on GO or a song section the lights change one after another. Leave Fade empty to use the cue's fade time. |
+| **Spread a value now** | Sets intensity, pan, tilt or zoom from X% to Y% across the lights, following the order and pattern above |
+
+The selection list shows each light's order number, its step and its delay. Lights outside the active part are dimmed. **Tricks on/off** pauses all of it without losing the settings, and **Reset** clears everything. Effects keep the tricks they were started with, including when they're saved into a cue or look.
 
 ## Running it live
 

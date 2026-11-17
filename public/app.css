@@ -296,6 +296,33 @@ kbd { display: inline-block; min-width: 18px; padding: 1px 5px; border-radius: 5
 .phasebox { margin: 4px 0 10px; }
 .phasebox canvas { width: 100%; height: 70px; background: #0b0d12; border: 1px solid var(--line); border-radius: 8px; display: block; }
 
+/* SELECTION TRICKS */
+.selchip small { display: block; font-size: 10px; color: var(--muted); }
+.selchip.idle { opacity: .45; border-style: dashed; }
+.tricks { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #12151c; }
+.tr-head { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.tr-body.off { opacity: .45; }
+.tr-sec { margin-top: 10px; }
+.tr-sec > .label { margin-bottom: 4px; }
+.tr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+.stepper { display: flex; flex-direction: column; gap: 3px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 5px 6px; }
+.stepper.set { border-color: #6b551f; background: #2a2412; }
+.st-label { font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+.st-row { display: flex; align-items: center; gap: 4px; }
+.st-row .btn { padding: 4px 9px; font-size: 14px; }
+.st-row input { width: 100%; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px; text-align: center; color: var(--text); }
+.stepper.set input { color: var(--accent); font-weight: 700; }
+.tr-sel select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px; color: var(--text); }
+.partlbl { flex: 1; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pairrow { display: grid; grid-template-columns: 64px 1fr 14px 1fr; gap: 6px; align-items: center; margin-bottom: 5px; font-size: 13px; }
+.pairrow .arrow { color: var(--muted); text-align: center; }
+.pairrow .stepper { padding: 3px 5px; }
+.pairrow .st-label { display: none; }
+.fanrow { gap: 6px; align-items: flex-end; flex-wrap: wrap; }
+.fanrow select, .fanrow input { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px; color: var(--text); width: 80px; }
+.fanrow select { width: 120px; }
+.fanrow label { display: flex; flex-direction: column; font-size: 11px; color: var(--muted); gap: 2px; }
+
 /* SONGS */
 .songs-grid { display: grid; grid-template-columns: minmax(200px, .8fr) minmax(320px, 2fr) minmax(220px, .9fr); gap: 12px; align-items: start; }
 .songhead { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
