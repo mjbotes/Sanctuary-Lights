@@ -13,11 +13,13 @@
   <div class="brand"><span class="logo"></span><span id="showName">Sanctuary Lights</span></div>
   <nav id="tabs">
     <button data-tab="live" class="on">Live</button>
+    <button data-tab="songs">Songs</button>
     <button data-tab="program">Program</button>
     <button data-tab="show">Cues &amp; Scenes</button>
     <button data-tab="patch">Patch</button>
     <button data-tab="setup">Setup</button>
   </nav>
+  <div id="midiPill" class="midipill" title="MIDI from the tracks">MIDI</div>
   <div id="conn" class="conn" title="Connection to the lighting computer">●</div>
 </header>
 
@@ -45,6 +47,63 @@
         <div id="liveScenes" class="scenes"></div>
         <div class="panelhead"><h2>Stage</h2></div>
         <div id="liveStage" class="stage small"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SONGS -->
+  <section id="tab-songs" class="tab">
+    <div class="songs-grid">
+      <div class="panel">
+        <div class="panelhead"><h2>Set list</h2><button class="btn small" id="addSong">+ Song</button></div>
+        <div id="songList" class="cuelist"></div>
+      </div>
+      <div class="panel">
+        <div class="songhead">
+          <div class="grow">
+            <div class="label">Song</div>
+            <div id="songTitle" class="nowname">—</div>
+            <div id="songNotes" class="notes"></div>
+          </div>
+          <div class="seg" id="modeSeg" role="group" aria-label="Follow mode">
+            <button data-mode="manual" title="Operator taps sections. MIDI from the tracks is ignored.">Manual</button>
+            <button data-mode="hybrid" title="Follows the tracks. Tap any section to override.">Hybrid</button>
+            <button data-mode="auto" title="Follows the tracks. Section buttons are locked.">Auto</button>
+          </div>
+        </div>
+        <div class="midirow">
+          <span id="midiLast" class="hint">No MIDI received yet.</span>
+          <button class="btn small" id="holdBtn" title="Ignore the tracks until you press Resume">Hold</button>
+        </div>
+        <div id="sectionPads" class="pads"></div>
+        <div class="gobar">
+          <button id="prevSec" class="btn big">◀ Prev</button>
+          <button id="nextSec" class="btn go">NEXT</button>
+        </div>
+        <div class="panelhead"><h2>Edit song</h2><button class="btn small" id="editSongBtn">Show editor</button></div>
+        <div id="songEditor" hidden>
+          <div class="form">
+            <div class="row">
+              <label>Name <input id="songName"></label>
+              <label>Note for operator <input id="songNoteInput" placeholder="e.g. long instrumental intro"></label>
+            </div>
+            <div class="row wrap trig">
+              <span class="hint">Song is selected by:</span>
+              <span id="songTrig"></span>
+            </div>
+          </div>
+          <div class="label" style="margin-top:12px">Add section</div>
+          <div class="chips" id="quickSections"></div>
+          <table class="tbl"><thead><tr><th>Section</th><th>Look</th><th>Fade</th><th>MIDI trigger</th><th></th></tr></thead><tbody id="sectionTable"></tbody></table>
+          <div class="row wrap" style="margin-top:12px">
+            <button class="btn warn" id="deleteSong">Delete song</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Looks</h2><button class="btn small primary" id="recLook">+ Record from stage</button></div>
+        <div id="lookList" class="looklist"></div>
+        <p class="hint">A look is a whole-stage state that sections use, such as "Verse", "Chorus" or "Bridge build". Set the lights on the Program tab, then record. If you improve a look, every song that uses it gets the change. A section whose name matches a look ("Verse 2" → "Verse") picks it automatically.</p>
       </div>
     </div>
   </section>
@@ -181,6 +240,18 @@
             <label>Device <input name="enttecPort" placeholder="/dev/cu.usbserial-XXXX"></label>
             <label>Universe to send <input name="enttecUniverse" type="number" min="1"></label>
             <p class="hint">On a Mac, find the device with <code>ls /dev/cu.usbserial*</code> in Terminal. Simple "Open DMX" cables are not supported.</p>
+          </fieldset>
+          <fieldset>
+            <legend>MIDI from Playback / Ableton</legend>
+            <div id="midiStatus" class="hint"></div>
+            <label>Listen on <select name="midiInput" id="midiInputSelect"></select></label>
+            <div class="row">
+              <label>MIDI channel <select name="midiChannel" id="midiChannelSelect"></select></label>
+              <label>First section note <input name="noteBase" type="number" min="0" max="127"></label>
+            </div>
+            <label class="check plain"><input type="checkbox" name="pcSelectsSong"> Program change n selects song n in the set list</label>
+            <label class="check plain"><input type="checkbox" id="webMidi"> Use this browser's MIDI instead (Chrome/Edge on the lighting Mac)</label>
+            <p class="hint">By default, note <b id="noteBaseName">C1</b> (36) triggers a song's first section, the next note its second, and so on. Or use <b>Learn</b> in the song editor to map whatever your track app sends.</p>
           </fieldset>
           <label>Frames per second <input name="fps" type="number" min="10" max="44"></label>
           <button class="btn primary">Save output settings</button>

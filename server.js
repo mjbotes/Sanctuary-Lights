@@ -8,6 +8,7 @@ const os = require('os');
 const path = require('path');
 const { Engine, demoShow } = require('./lib/engine');
 const { Output } = require('./lib/output');
+const { MidiIn } = require('./lib/midi');
 
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -99,6 +100,7 @@ function fullState() {
     profiles: engine.profileList(),
     runtime: engine.runtimeState(),
     outputError: output.lastError,
+    midi: midi.status(),
   };
 }
 function broadcast(event, data) {
@@ -115,6 +117,34 @@ setInterval(() => {
 setInterval(() => {
   for (const res of clients) res.write(': ping\n\n');
 }, 15000);
+
+// ----- actions ---------------------------------------------------------------
+function runAction(action) {
+  const before = { fps: engine.show.settings.fps, midiInput: engine.show.settings.midiInput };
+  const changed = engine.dispatch(action); // throws on bad input
+  if (changed.show) {
+    saveShowSoon();
+    output.configure(engine.show.settings);
+    if (engine.show.settings.fps !== before.fps) startLoop();
+    if (engine.show.settings.midiInput !== before.midiInput) midi.configure(engine.show.settings.midiInput);
+  }
+  if (!changed.show && !changed.runtime) return;
+  saveRuntimeSoon();
+  latestLook = engine.computeLook();
+  broadcast(changed.show ? 'state' : 'runtime', changed.show ? fullState() : engine.runtimeState());
+}
+
+// ----- MIDI in ---------------------------------------------------------------
+const midi = new MidiIn(console);
+midi.on('message', (data) => {
+  try {
+    runAction({ type: 'midi.message', data });
+  } catch (e) {
+    console.warn('MIDI:', e.message);
+  }
+});
+midi.on('ports', () => broadcast('state', fullState()));
+midi.configure(engine.show.settings.midiInput);
 
 // ----- HTTP ----------------------------------------------------------------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
@@ -160,21 +190,11 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/action' && req.method === 'POST') {
       const action = JSON.parse(await readBody(req));
-      const fpsBefore = engine.show.settings.fps;
-      let changed;
       try {
-        changed = engine.dispatch(action);
+        runAction(action);
       } catch (e) {
         return json(res, 400, { ok: false, error: e.message });
       }
-      if (changed.show) {
-        saveShowSoon();
-        output.configure(engine.show.settings);
-        if (engine.show.settings.fps !== fpsBefore) startLoop();
-      }
-      saveRuntimeSoon();
-      latestLook = engine.computeLook();
-      broadcast(changed.show ? 'state' : 'runtime', changed.show ? fullState() : engine.runtimeState());
       return json(res, 200, { ok: true });
     }
     if (url.pathname === '/api/dmx') {
@@ -183,7 +203,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { universe: u, data: data ? Array.from(data) : new Array(512).fill(0), universes: [...lastUniverses.keys()].sort((a, b) => a - b) });
     }
     if (url.pathname === '/api/info') {
-      return json(res, 200, { interfaces: interfaces(), dataDir: DATA_DIR, port: PORT, platform: process.platform, outputError: output.lastError });
+      return json(res, 200, { interfaces: interfaces(), dataDir: DATA_DIR, port: PORT, platform: process.platform, outputError: output.lastError, midi: midi.status() });
     }
     if (url.pathname === '/api/export') {
       const name = (engine.show.name || 'show').replace(/[^a-z0-9-_ ]/gi, '').trim() || 'show';
@@ -225,6 +245,7 @@ function shutdown() {
     writeJsonAtomic(RUNTIME_FILE, engine.persistentRuntime());
   } catch {}
   output.close();
+  midi.close();
   process.exit(0);
 }
 process.on('SIGINT', shutdown);

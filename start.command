@@ -9,6 +9,11 @@ if ! command -v node >/dev/null 2>&1; then
   open "https://nodejs.org/en/download"
   exit 1
 fi
+# Install the MIDI module the first time (needs internet once; optional).
+if [ ! -d node_modules/@julusian/midi ] && command -v npm >/dev/null 2>&1; then
+  echo "Installing MIDI support (one time)..."
+  npm install --omit=dev --no-audit --no-fund || echo "MIDI module could not be installed. Lights still work; MIDI can use the browser bridge."
+fi
 PORT="${PORT:-8080}"
 ( sleep 1.5; open "http://localhost:$PORT" ) &
 exec node server.js

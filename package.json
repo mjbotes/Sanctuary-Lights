@@ -6,6 +6,9 @@
   "private": true,
   "license": "MIT",
   "engines": { "node": ">=18" },
+  "optionalDependencies": {
+    "@julusian/midi": "^3.9.0"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "node --test test/*.test.js"
