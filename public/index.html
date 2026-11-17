@@ -15,6 +15,7 @@
   <nav id="tabs">
     <button data-tab="live" class="on">Live</button>
     <button data-tab="songs">Songs</button>
+    <button data-tab="tracks">Tracks</button>
     <button data-tab="program">Program</button>
     <button data-tab="fx">FX &amp; Presets</button>
     <button data-tab="show">Cues &amp; Scenes</button>
@@ -112,6 +113,37 @@
         <div class="panelhead"><h2>Looks</h2><button class="btn small primary" id="recLook">+ Record from stage</button></div>
         <div id="lookList" class="looklist"></div>
         <p class="hint">A look is a whole-stage state that sections use, such as "Verse", "Chorus" or "Bridge build". Set the lights on the Program tab, then record. If you improve a look, every song that uses it gets the change. A section whose name matches a look ("Verse 2" → "Verse") picks it automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRACKS -->
+  <section id="tab-tracks" class="tab">
+    <div class="tracks-grid">
+      <div class="panel">
+        <div class="panelhead"><h2>Set list</h2><button class="btn small" id="tkPrepareAll" title="Render every song at its key/tempo in the background">Prepare set</button></div>
+        <div id="tkSongs" class="cuelist"></div>
+        <div class="hostbox" id="hostBox"></div>
+      </div>
+      <div class="panel">
+        <div class="songhead">
+          <div class="grow"><div class="label">Song</div><div id="tkTitle" class="nowname">—</div><div id="tkStatus" class="hint"></div></div>
+          <div class="keybox" id="tkKey"></div>
+        </div>
+        <div class="transport">
+          <button class="btn" id="tkStart" title="Back to the start">⏮</button>
+          <button class="btn go tk-play" id="tkPlay">▶ Play</button>
+          <button class="btn" id="tkLoop" title="Repeat the current section until you press it again (vamp)">⟳ Vamp</button>
+          <span class="tk-time" id="tkTime">0:00 / 0:00</span>
+        </div>
+        <canvas id="tkWave" class="tk-wave" width="1200" height="120"></canvas>
+        <div class="tk-sections" id="tkSections"></div>
+        <div class="panelhead"><h2>Mixer</h2><label class="btn small">+ Add tracks…<input type="file" id="tkFiles" accept="audio/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.ogg" multiple hidden></label></div>
+        <div id="tkMixer" class="mixer"></div>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Vocal</h2><span class="hint" id="vxLatency" style="margin:0"></span></div>
+        <div id="vxBox"></div>
       </div>
     </div>
   </section>
@@ -335,6 +367,7 @@
               <label>First section note <input name="noteBase" type="number" min="0" max="127"></label>
             </div>
             <label class="check plain"><input type="checkbox" name="pcSelectsSong"> Program change n selects song n in the set list</label>
+            <label>Send to (MIDI out, for SuperRack / Ableton / MainStage) <select name="midiOutput" id="midiOutputSelect"></select></label>
             <label class="check plain"><input type="checkbox" id="webMidi"> Use this browser's MIDI instead (Chrome/Edge on the lighting Mac)</label>
             <p class="hint">By default, note <b id="noteBaseName">C1</b> (36) triggers a song's first section, the next note its second, and so on. Or use <b>Learn</b> in the song editor to map whatever your track app sends.</p>
           </fieldset>

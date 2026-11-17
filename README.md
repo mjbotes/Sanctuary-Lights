@@ -14,7 +14,48 @@ A simple, free lighting controller for churches. It runs on a Mac, and volunteer
 - **Saving:** the show saves automatically, with a backup each time the app starts. If the Mac restarts mid-service, the app reopens on the cue it was on.
 - **No installs beyond Node.js:** apart from an optional MIDI module, the app has no other dependencies.
 
-## Install on a Mac
+## Desktop app (installer)
+
+Download the installer from the repository's **Releases** page (or from the latest **Actions → Build installers** run, under *Artifacts*):
+
+| System | File |
+|---|---|
+| Mac with Apple Silicon (M1–M4) | `Sanctuary-Lights-…-mac-arm64.dmg` |
+| Intel Mac | `Sanctuary-Lights-…-mac-x64.dmg` |
+| Windows | `Sanctuary-Lights-…-win-x64.exe` |
+| Linux | `Sanctuary-Lights-…-linux-x86_64.AppImage` |
+
+On a Mac, open the `.dmg` and drag **Sanctuary Lights** to Applications.
+
+- **First launch:** unless the build was signed with an Apple Developer certificate (see below), macOS blocks the app. Try to open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
+- **Permissions:** allow the microphone (for vocals) and the local network (for Art-Net/sACN and iPads) when asked.
+
+The app includes everything (no Node.js needed), and iPads can still connect to the address shown in Setup.
+
+### Building installers with GitHub Actions
+
+`.github/workflows/build.yml` runs the tests, then builds the macOS (Apple Silicon and Intel), Windows and Linux installers on GitHub's machines. Each run's installers are under **Actions → the run → Artifacts**. To publish a release:
+
+```
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+That creates a GitHub Release with the installers attached.
+
+**Optional macOS signing and notarization** stops the "Open Anyway" step. It needs an Apple Developer account. Add these repository secrets:
+
+| Secret | Contents |
+|---|---|
+| `MAC_CERT_P12_BASE64` | Developer ID Application certificate exported as .p12, base64-encoded |
+| `MAC_CERT_PASSWORD` | Its password |
+| `APPLE_ID` | Apple ID email |
+| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for that Apple ID |
+| `APPLE_TEAM_ID` | Apple team ID |
+
+To build locally: `npm install`, then `npm run dist:mac` (or `dist:win` / `dist:linux`). `npm run app` runs the desktop app without packaging it.
+
+## Install on a Mac (without the installer)
 
 1. Install **Node.js LTS** from <https://nodejs.org> (download the macOS installer and click through).
 2. Copy the `church-lights` folder somewhere permanent, such as `Documents`.
@@ -162,6 +203,44 @@ The 3D view is on the Live and Program tabs (**2D / 3D** switch) and in **Patch 
 - **MVR import:** consoles, CAD and visualisers (Vectorworks, Capture, grandMA3, Depence…) export MVR files. **Import MVR…** reads every light's name, position, aim and DMX address, plus the stage and truss geometry. You then choose which fixture type (channel layout) to use for each kind of light in the file.
 - Moving heads follow their pan, tilt and zoom in the 3D view. Light sources are approximate: they are for planning, not photometric accuracy.
 
+## Tracks: backing tracks, key and tempo, live vocal
+
+The **Tracks** tab plays your backing tracks itself, so no Ableton or Playback is needed, and drives the lights from the timeline.
+
+**Setting up a song**
+
+1. Pick the song (add it on the Songs tab first, with its sections: Intro, Verse, Chorus…).
+2. **+ Add tracks…**: choose all the stems at once (WAV, AIFF, MP3, M4A, FLAC). They must all start at the same moment, as exported from your DAW or MultiTracks.
+3. Set **Recorded in** (key, major/minor) and the original **BPM**.
+4. Play, and at the start of each part tap the section's **⌖** to set its marker. **×** removes a marker, and the timeline shows them all. As the tracks play past a marker, the lights go to that section (in Hybrid or Auto mode, as on the Songs tab).
+
+**Changing key and tempo**
+
+- **Plays in − / +** moves the whole song by semitones. All stems are re-rendered at the new key in the background, using several CPU cores. Click tracks keep their pitch ("Follows key" unticked) but follow the tempo.
+- **Tempo − / +** changes the speed without changing the key, and markers move with the music.
+- The **auto-tune follows automatically**. With *Follow the song key*, it corrects to the song's current key and scale, so changing the key once moves the tracks, the auto-tune and the tempo-synced vocal delay together.
+- **Prepare set** renders every song at its key and tempo before the service, so picking a song is instant. Expect roughly 10–20 seconds per song on a recent Mac.
+
+**Mixer:** each stem has a fader with a meter, mute and solo, pan, and an **output**. With a multi-output audio interface, send the click and guide to 3-4 for in-ears and the band tracks to Main 1-2 for FOH. Click/guide stems go to 3-4 automatically.
+
+**Transport:** **Play/Stop**, **⏮**, click the timeline to jump, tap a section name to jump to its marker. **Vamp** repeats the current section until you press it again, which is good for a spontaneous extra chorus.
+
+**Which computer plays the audio:** tick **This computer plays the audio** on the Mac connected to the sound desk, and choose the output device there. Other screens (iPads, the lighting laptop) then work as remotes for play, stop, key and mix.
+
+**Vocal (live auto-tune)**
+
+- **Vocal on**, then choose the **input** (audio interface and channel) on the computer playing the audio.
+- **Auto-tune:**
+  - **Follow the song key**, or major / minor / chromatic
+  - **Amount** (0–100%)
+  - **Speed**: 0 = hard, "robotic" snap; 30–80 ms natural; 150 ms+ gentle
+  - The display shows the sung note and how far it is being moved.
+- **Tone:** low, presence, air, compression. **Effects:** reverb and a delay locked to the song tempo.
+- **Save for this song** stores these settings with the song (like a snapshot) and recalls them when the song is picked.
+- Latency is about 25 ms through the auto-tune (plus your interface), so most singers won't notice it in their wedges. In in-ears it can be noticeable: send their in-ear mix from the desk instead.
+
+**Plugins (VST/AU/Waves):** a browser-based app can't host third-party plugins. If you rely on SuperRack Performer, Ableton or MainStage, keep them running and set each song's **MIDI out PC** (program change) in the Tracks tab. Choose the MIDI output in Setup. Picking a song then switches their snapshots too.
+
 ## Songs and backing tracks (Playback, Ableton Live)
 
 The **Songs** tab plans lights per song section:
@@ -248,6 +327,13 @@ Code layout:
 - `lib/profiles.js`: fixture types
 - `lib/midi.js`: MIDI input and clock (CoreMIDI, through the optional `@julusian/midi` module)
 - `lib/mvr.js`: MVR (zip + XML) reader
+- `public/audio/`: tracks engine
+  - `engine.js`: playback, routing, vocal chain
+  - `pvcore.js`: key/tempo change (phase vocoder)
+  - `tunercore.js`: auto-tune (YIN + PSOLA)
+  - worker and worklet wrappers
+- `electron/main.js`: desktop app
+- `.github/workflows/build.yml`: installer builds
 - `public/fxmath.js`: effect maths (waveforms, phase), shared by the server and the browser
 - `public/stage3d.js`: 3D view (three.js, bundled in `public/vendor/three` under its MIT licence)
 - `public/`: the browser app (plain HTML, CSS and JS, with no build step)

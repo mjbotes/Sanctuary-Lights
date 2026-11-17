@@ -123,7 +123,9 @@ setInterval(() => {
 // ----- actions ---------------------------------------------------------------
 function runAction(action) {
   const before = { fps: engine.show.settings.fps, midiInput: engine.show.settings.midiInput };
+  const songBefore = engine.rt.songId;
   const changed = engine.dispatch(action); // throws on bad input
+  if (engine.rt.songId !== songBefore) sendSongMidi();
   if (changed.show) {
     saveShowSoon();
     output.configure(engine.show.settings);
@@ -134,6 +136,14 @@ function runAction(action) {
   saveRuntimeSoon();
   latestLook = engine.computeLook();
   broadcast(changed.show ? 'state' : 'runtime', changed.show ? fullState() : engine.runtimeState());
+}
+
+// Program change to other software (SuperRack, Ableton, MainStage...) when the song changes.
+function sendSongMidi() {
+  const song = engine.show.songs.find((s) => s.id === engine.rt.songId);
+  const port = engine.show.settings.midiOutput;
+  if (!song || !song.midiOut || !port) return;
+  midi.send(port, [0xc0 | ((song.midiOut.ch || 1) - 1), song.midiOut.pc & 0x7f]);
 }
 
 // ----- MIDI in ---------------------------------------------------------------
@@ -155,7 +165,8 @@ midi.on('clockStop', () => runAction({ type: 'tempo.clockStop' }));
 midi.configure(engine.show.settings.midiInput);
 
 // ----- HTTP ----------------------------------------------------------------
-const MIME = { '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json', '.obj': 'text/plain', '.3ds': 'application/octet-stream', '.bin': 'application/octet-stream', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mtl': 'text/plain',
+const MIME = { '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.aac': 'audio/aac', '.flac': 'audio/flac', '.ogg': 'audio/ogg', '.aif': 'audio/aiff', '.aiff': 'audio/aiff', '.caf': 'audio/x-caf',
+  '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json', '.obj': 'text/plain', '.3ds': 'application/octet-stream', '.bin': 'application/octet-stream', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mtl': 'text/plain',
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
 
 function readRaw(req, limit) {
@@ -236,6 +247,14 @@ const server = http.createServer(async (req, res) => {
       if (!/\.(glb|gltf|obj|3ds)$/i.test(name)) return json(res, 400, { ok: false, error: 'Use a .glb, .gltf, .obj or .3ds file (GLB works best)' });
       const data = await readRaw(req, 300e6);
       const rel = `models/${Date.now().toString(36)}-${name}`;
+      saveAsset(rel, data);
+      return json(res, 200, { ok: true, file: rel, name });
+    }
+    if (url.pathname === '/api/upload/audio' && req.method === 'POST') {
+      const name = safeName(url.searchParams.get('name'));
+      if (!/\.(wav|aiff?|mp3|m4a|aac|flac|ogg|caf)$/i.test(name)) return json(res, 400, { ok: false, error: 'Use WAV, AIFF, MP3, M4A, FLAC or OGG audio files' });
+      const data = await readRaw(req, 1000e6);
+      const rel = `audio/${Date.now().toString(36)}-${name}`;
       saveAsset(rel, data);
       return json(res, 200, { ok: true, file: rel, name });
     }
