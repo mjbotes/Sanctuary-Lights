@@ -289,13 +289,19 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+// When embedded in the desktop app, the app waits on this promise instead of the process exiting.
+let readyResolve, readyReject;
+module.exports.ready = new Promise((res, rej) => { readyResolve = res; readyReject = rej; });
+module.exports.ready.catch(() => {});
 server.on('error', (e) => {
-  if (e.code === 'EADDRINUSE') console.error(`Port ${PORT} is already in use. Is Sanctuary Lights already running? (Set PORT=8081 to use another port.)`);
-  else console.error(e);
+  const msg = e.code === 'EADDRINUSE' ? `Port ${PORT} is already in use. Is Sanctuary Lights already running? (Set PORT=8081 to use another port.)` : String(e);
+  console.error(msg);
+  if (process.env.SL_EMBEDDED) return readyReject(new Error(msg));
   process.exit(1);
 });
 
 server.listen(PORT, HOST, () => {
+  readyResolve({ port: PORT });
   console.log('\n  Sanctuary Lights is running.\n');
   console.log(`  On this computer:   http://localhost:${PORT}`);
   for (const i of interfaces()) console.log(`  On iPad/phone:      http://${i.address}:${PORT}   (${i.name})`);
@@ -312,5 +318,15 @@ function shutdown() {
   midi.close();
   process.exit(0);
 }
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+module.exports.shutdown = () => {
+  try {
+    writeJsonAtomic(SHOW_FILE, engine.show);
+    writeJsonAtomic(RUNTIME_FILE, engine.persistentRuntime());
+  } catch {}
+  output.close();
+  midi.close();
+};
+if (!process.env.SL_EMBEDDED) {
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+}
