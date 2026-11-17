@@ -1,0 +1,13 @@
+{
+  "name": "sanctuary-lights",
+  "version": "1.0.0",
+  "description": "A simple, free lighting controller for churches. Art-Net, sACN and USB DMX output with a browser/iPad UI.",
+  "main": "server.js",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  }
+}

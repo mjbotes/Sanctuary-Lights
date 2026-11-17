@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0f14">
+<title>Sanctuary Lights</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo"></span><span id="showName">Sanctuary Lights</span></div>
+  <nav id="tabs">
+    <button data-tab="live" class="on">Live</button>
+    <button data-tab="program">Program</button>
+    <button data-tab="show">Cues &amp; Scenes</button>
+    <button data-tab="patch">Patch</button>
+    <button data-tab="setup">Setup</button>
+  </nav>
+  <div id="conn" class="conn" title="Connection to the lighting computer">●</div>
+</header>
+
+<main>
+  <!-- LIVE -->
+  <section id="tab-live" class="tab on">
+    <div class="live-grid">
+      <div class="panel cuepanel">
+        <div class="now">
+          <div class="label">Now</div>
+          <div id="nowName" class="nowname">—</div>
+          <div id="nowNotes" class="notes"></div>
+          <div class="progress"><div id="cueProgress"></div></div>
+          <div class="label">Next</div>
+          <div id="nextName" class="nextname">—</div>
+        </div>
+        <div class="gobar">
+          <button id="backBtn" class="btn big">◀ Back</button>
+          <button id="goBtn" class="btn go">GO</button>
+        </div>
+        <div id="liveCues" class="cuelist"></div>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Scenes</h2><button class="btn small" data-act="scene.releaseAll">Release all</button></div>
+        <div id="liveScenes" class="scenes"></div>
+        <div class="panelhead"><h2>Stage</h2></div>
+        <div id="liveStage" class="stage small"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRAM -->
+  <section id="tab-program" class="tab">
+    <div class="prog-grid">
+      <div class="panel">
+        <div class="panelhead">
+          <h2>Select lights</h2>
+          <div class="row">
+            <button class="btn small" id="selAll">All</button>
+            <button class="btn small" id="selNone">None</button>
+          </div>
+        </div>
+        <div id="groupBar" class="chips"></div>
+        <div id="progStage" class="stage"></div>
+        <div class="hint" id="selInfo">Tap lights to select them.</div>
+      </div>
+      <div class="panel controls" id="controls">
+        <div class="ctl">
+          <div class="ctlhead"><span>Intensity</span><b id="dimVal">—</b></div>
+          <input type="range" id="dim" min="0" max="1000" value="0">
+          <div class="row quick">
+            <button class="btn small" data-dim="0">Off</button>
+            <button class="btn small" data-dim="0.25">25%</button>
+            <button class="btn small" data-dim="0.5">50%</button>
+            <button class="btn small" data-dim="0.75">75%</button>
+            <button class="btn small" data-dim="1">Full</button>
+          </div>
+        </div>
+        <div class="ctl" id="colorCtl">
+          <div class="ctlhead"><span>Colour</span><input type="color" id="colorPick" value="#ffffff" aria-label="Custom colour"></div>
+          <div id="swatches" class="swatches"></div>
+          <div id="extraColor"></div>
+        </div>
+        <div class="ctl" id="moveCtl" hidden>
+          <div class="ctlhead"><span>Position</span><button class="btn small" id="centerPos">Centre</button></div>
+          <div id="xy" class="xy"><div id="xyDot"></div></div>
+        </div>
+        <div id="otherCtl"></div>
+        <div class="row wrap actions">
+          <button class="btn" id="locateBtn">Locate</button>
+          <button class="btn" id="clearSelBtn">Clear selected</button>
+          <button class="btn warn" id="clearAllBtn">Clear all</button>
+        </div>
+        <div class="record">
+          <h3>Save what's on stage</h3>
+          <div class="row wrap">
+            <button class="btn primary" id="recCue">Record new cue</button>
+            <button class="btn" id="updCue">Update current cue</button>
+            <button class="btn" id="recScene">Save as scene</button>
+          </div>
+          <p class="hint">A <b>cue</b> saves the whole stage look and goes in the GO list. A <b>scene</b> saves only the lights you've changed here, so you can switch it on over anything (e.g. "Pulpit", "Baptism").</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CUES & SCENES -->
+  <section id="tab-show" class="tab">
+    <div class="two-col">
+      <div class="panel">
+        <div class="panelhead"><h2>Cue list</h2><button class="btn small" data-act="cue.release">Fade out cue list</button></div>
+        <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Fade (s)</th><th>Notes</th><th></th></tr></thead><tbody id="cueTable"></tbody></table>
+        <p class="hint">Record cues on the Program tab. Tap a cue's number to jump to it.</p>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Scenes</h2></div>
+        <table class="tbl"><thead><tr><th>Colour</th><th>Name</th><th>Fade (s)</th><th></th></tr></thead><tbody id="sceneTable"></tbody></table>
+        <p class="hint">"Update" replaces a scene with what is currently set on the Program tab.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PATCH -->
+  <section id="tab-patch" class="tab">
+    <div class="two-col">
+      <div class="panel">
+        <div class="panelhead"><h2>Add lights</h2></div>
+        <form id="addForm" class="form">
+          <label>Type <select name="profile" id="addProfile"></select></label>
+          <label>Name <input name="name" placeholder="e.g. Front wash"></label>
+          <div class="row">
+            <label>How many <input name="count" type="number" min="1" max="128" value="1"></label>
+            <label>Universe <input name="universe" type="number" min="1" value="1"></label>
+            <label>Start address <input name="address" type="number" min="1" max="512" placeholder="auto"></label>
+          </div>
+          <button class="btn primary">Add</button>
+        </form>
+        <div class="panelhead"><h2>Patched lights</h2><button class="btn small" id="arrangeBtn">Arrange stage</button></div>
+        <div id="arrangeWrap" hidden>
+          <p class="hint">Drag lights to where they hang in the room. Top = back of stage.</p>
+          <div id="arrangeStage" class="stage"></div>
+        </div>
+        <table class="tbl"><thead><tr><th>Name</th><th>Type</th><th>Univ</th><th>Addr</th><th></th></tr></thead><tbody id="fixTable"></tbody></table>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Fixture types</h2></div>
+        <div id="profileList"></div>
+        <form id="profForm" class="form">
+          <h3 id="profFormTitle">New fixture type</h3>
+          <input type="hidden" name="id">
+          <label>Name <input name="name" placeholder="e.g. Chauvet SlimPAR 6ch mode" required></label>
+          <label>Channels, in order <input name="channels" placeholder="dim red green blue strobe=0 0" required></label>
+          <p class="hint">Words: <code>dim red green blue white amber uv pan tilt zoom focus strobe haze fan</code>. Add <code>.fine</code> for a 16-bit fine channel (<code>pan.fine</code>), <code>=n</code> for a default value (<code>strobe=0</code>), a number for a fixed value (<code>255</code>), or <code>-</code> for an unused channel. Copy the order from your light's manual.</p>
+          <div class="row"><button class="btn primary">Save type</button><button type="button" class="btn" id="profCancel">New</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="tab-setup" class="tab">
+    <div class="two-col">
+      <div class="panel">
+        <div class="panelhead"><h2>Output</h2></div>
+        <form id="setForm" class="form">
+          <label>Show name <input name="name"></label>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="artnet"> Art-Net</label></legend>
+            <label>Send to (IP) <input name="artnetTarget" placeholder="255.255.255.255 or 2.255.255.255 or a node's IP"></label>
+            <label>Universe 1 is sent as Art-Net
+              <select name="artnetBase"><option value="0">universe 0 (0:0:0) — most nodes</option><option value="1">universe 1</option></select></label>
+          </fieldset>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="sacn"> sACN (E1.31)</label></legend>
+            <label>Network interface <select name="sacnInterface" id="ifaceSelect"></select></label>
+            <label>Unicast IP (optional) <input name="sacnUnicast" placeholder="leave blank for multicast"></label>
+            <label>Priority <input name="sacnPriority" type="number" min="0" max="200"></label>
+          </fieldset>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="enttec"> USB DMX (Enttec DMX USB Pro type)</label></legend>
+            <label>Device <input name="enttecPort" placeholder="/dev/cu.usbserial-XXXX"></label>
+            <label>Universe to send <input name="enttecUniverse" type="number" min="1"></label>
+            <p class="hint">On a Mac, find the device with <code>ls /dev/cu.usbserial*</code> in Terminal. Simple "Open DMX" cables are not supported.</p>
+          </fieldset>
+          <label>Frames per second <input name="fps" type="number" min="10" max="44"></label>
+          <button class="btn primary">Save output settings</button>
+          <div id="outErr" class="err"></div>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Show file</h2></div>
+        <p class="hint" id="dataDir"></p>
+        <div class="row wrap">
+          <a class="btn" href="/api/export">Download backup</a>
+          <label class="btn">Load show file…<input type="file" id="importFile" accept=".json,application/json" hidden></label>
+          <button class="btn warn" id="newShow">New empty show</button>
+          <button class="btn" id="demoShow">Load demo</button>
+        </div>
+        <div class="panelhead"><h2>DMX monitor</h2><select id="monUniverse"></select></div>
+        <div id="dmxMon" class="dmx"></div>
+        <div class="panelhead"><h2>Open on iPad / phone</h2></div>
+        <div id="urls" class="hint"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="masters">
+  <div class="gm">
+    <span>Master</span>
+    <input type="range" id="gm" min="0" max="1000" value="1000">
+    <b id="gmVal">100%</b>
+  </div>
+  <button id="progBadge" class="btn small badge" hidden></button>
+  <button id="blackout" class="btn bo">Blackout</button>
+</footer>
+
+<div id="toast" class="toast" hidden></div>
+<dialog id="prompt"><form method="dialog"><h3 id="promptTitle"></h3><input id="promptInput"><div class="row"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary" id="promptOk">OK</button></div></form></dialog>
+<script src="app.js"></script>
+</body>
+</html>
