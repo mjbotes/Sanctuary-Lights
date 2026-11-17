@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#0d0f14">
 <title>Sanctuary Lights</title>
 <link rel="stylesheet" href="app.css">
+<script type="importmap">{ "imports": { "three": "/vendor/three/build/three.module.min.js", "three/addons/": "/vendor/three/jsm/" } }</script>
 </head>
 <body>
 <header class="top">
@@ -45,10 +46,12 @@
       <div class="panel">
         <div class="panelhead"><h2>Scenes</h2><button class="btn small" data-act="scene.releaseAll">Release all</button></div>
         <div id="liveScenes" class="scenes"></div>
-        <div class="panelhead"><h2>Stage</h2></div>
-        <div id="liveStage" class="stage small"></div>
+        <div class="panelhead"><h2>Stage</h2><div class="seg small viewseg"><button data-view="2d">2D</button><button data-view="3d">3D</button></div></div>
+        <div id="liveStage" class="stage small view2d"></div>
+        <div id="live3d" class="wrap3d view3d"></div>
       </div>
     </div>
+    <div class="panel buskpanel" id="liveBusk"></div>
   </section>
 
   <!-- SONGS -->
@@ -80,12 +83,14 @@
           <button id="prevSec" class="btn big">◀ Prev</button>
           <button id="nextSec" class="btn go">NEXT</button>
         </div>
+        <div class="buskpanel inset" id="songsBusk"></div>
         <div class="panelhead"><h2>Edit song</h2><button class="btn small" id="editSongBtn">Show editor</button></div>
         <div id="songEditor" hidden>
           <div class="form">
             <div class="row">
               <label>Name <input id="songName"></label>
               <label>Note for operator <input id="songNoteInput" placeholder="e.g. long instrumental intro"></label>
+              <label style="max-width:90px">BPM <input id="songBpm" type="number" min="30" max="300" placeholder="—"></label>
             </div>
             <div class="row wrap trig">
               <span class="hint">Song is selected by:</span>
@@ -115,12 +120,14 @@
         <div class="panelhead">
           <h2>Select lights</h2>
           <div class="row">
+            <div class="seg small viewseg"><button data-view="2d">2D</button><button data-view="3d">3D</button></div>
             <button class="btn small" id="selAll">All</button>
             <button class="btn small" id="selNone">None</button>
           </div>
         </div>
         <div id="groupBar" class="chips"></div>
-        <div id="progStage" class="stage"></div>
+        <div id="progStage" class="stage view2d"></div>
+        <div id="prog3d" class="wrap3d tall view3d"></div>
         <div class="hint" id="selInfo">Tap lights to select them.</div>
       </div>
       <div class="panel controls" id="controls">
@@ -214,6 +221,35 @@
         </form>
       </div>
     </div>
+    <div class="panel" style="margin-top:12px">
+      <div class="panelhead">
+        <h2>3D stage &amp; rig</h2>
+        <div class="row wrap">
+          <label class="btn small">Import MVR…<input type="file" id="mvrFile" accept=".mvr,.zip" hidden></label>
+          <label class="btn small">Add 3D model…<input type="file" id="modelFile" accept=".glb,.gltf,.obj,.3ds" hidden></label>
+        </div>
+      </div>
+      <div class="setup3d">
+        <div id="patch3d" class="wrap3d tall"></div>
+        <div class="side3d">
+          <div id="sel3d" class="box3d"></div>
+          <div class="box3d">
+            <h3>Stage size (metres)</h3>
+            <div class="row" id="stageSize">
+              <label class="mini3">Width <input type="number" step="0.5" data-k="w"></label>
+              <label class="mini3">Depth <input type="number" step="0.5" data-k="d"></label>
+              <label class="mini3">Height <input type="number" step="0.1" data-k="h"></label>
+            </div>
+            <p class="hint">Used for the simple stage block when no 3D model is loaded.</p>
+          </div>
+          <div class="box3d">
+            <h3>3D models</h3>
+            <div id="modelList"></div>
+            <p class="hint">GLB (glTF binary) works best: export it from SketchUp, Blender, Vectorworks or most 3D tools. An MVR file from a console or CAD program brings in the whole rig: lights, positions, DMX addresses and the stage.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- SETUP -->
@@ -287,7 +323,18 @@
 </footer>
 
 <div id="toast" class="toast" hidden></div>
+<dialog id="mvrDialog" class="wide">
+  <form method="dialog">
+    <h3>Import MVR</h3>
+    <p class="hint" id="mvrSummary"></p>
+    <p class="hint">Choose the fixture type (DMX channel layout) to use for each kind of light in the file:</p>
+    <table class="tbl"><thead><tr><th>In the file</th><th>Lights</th><th>Use type</th></tr></thead><tbody id="mvrTypes"></tbody></table>
+    <label class="check plain"><input type="checkbox" id="mvrReplace" checked> Replace the lights that are patched now</label>
+    <label class="check plain"><input type="checkbox" id="mvrModels" checked> Use the stage geometry from the file</label>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary">Import</button></div>
+  </form>
+</dialog>
 <dialog id="prompt"><form method="dialog"><h3 id="promptTitle"></h3><input id="promptInput"><div class="row"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary" id="promptOk">OK</button></div></form></dialog>
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

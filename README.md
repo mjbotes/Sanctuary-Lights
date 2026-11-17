@@ -3,6 +3,8 @@
 A simple, free lighting controller for churches. It runs on a Mac, and volunteers run it from a web browser on that Mac **or from an iPad or phone** on the same Wi-Fi.
 
 - **Songs that follow your backing tracks:** plan the lights for every Intro, Verse, Chorus and Bridge. **Playback** (MultiTracks) or **Ableton Live** triggers them over MIDI, or an operator taps them live, or a mix of both.
+- **3D stage view:** load your church as a 3D model (`.glb`, `.gltf`, `.obj`, `.3ds`), or import a whole rig from an **MVR** file. You see real coloured beams while you program and run the service.
+- **Live control:** every group gets a fader, colour buttons, a Flash button and effects (pulse, chase, sparkle, rainbow, movement) locked to a tempo. The tempo comes from TAP, the song's BPM or Ableton's MIDI clock. This works on top of anything that's running.
 - **Live screen for volunteers:** a big **GO** button steps through the service cue list. Scene buttons ("Pulpit", "Baptism", "Worship wash") switch on over anything. There is a master fader and a blackout button.
 - **Program screen:** tap lights on a stage map, then set intensity, colour (swatches or a colour picker), pan/tilt, zoom and haze. Save the result as a cue or a scene.
 - **Output:** Art-Net, sACN (E1.31), and USB DMX widgets of the Enttec DMX USB Pro type.
@@ -51,6 +53,32 @@ How looks combine:
 - Scenes add on top. Each light uses the highest intensity of the cue and any active scenes, and colours blend with each scene's fader level.
 - Anything you are editing on the Program tab overrides both, until you press **Clear**.
 - The master fader and Blackout scale intensity only.
+
+## Running it live
+
+Groups (made on the Program tab) get a **Live control** strip on the Live and Songs tabs:
+
+| Control | What it does |
+|---|---|
+| **Fader** | Trims that group's brightness (100% = as planned). |
+| **Colour buttons** | Changes the group's colour on the fly. **×** goes back to the planned colour. |
+| **Flash** | Full brightness while held. |
+| **Pulse / Chase / Sparkle / Rainbow / Move** | Effects in time with the tempo. Move only appears for moving heads, and the speed selector sets beats per cycle. |
+| **TAP** (or the **T** key) | Taps the tempo. Click the BPM number to type one. The tempo also comes from a song's BPM, or follows Ableton automatically when it sends MIDI clock. |
+| **Release live** | Clears all live changes. |
+
+Live changes sit on top of cues, songs and scenes, so you can busk a whole service, run it fully pre-programmed, or anything in between.
+
+When you record a cue or look, live **colours and effects are saved with it**: a "Chorus" look can pulse the back wash on the beat every time. Fader trims and flashes are never recorded. A dashed outline on an effect button means that effect comes from the current look; tap **Off** to stop it for now.
+
+## 3D stage and rig
+
+The 3D view is on the Live and Program tabs (**2D / 3D** switch) and in **Patch → 3D stage & rig**, where you set it up. Drag to orbit, pinch or scroll to zoom, and use **Front / FOH / Top / Side** for quick views. **Work light** lights the room so you can see the model, and **Haze** sets how visible the beams are.
+
+- **Your church model:** **Add 3D model…** takes `.glb` (best), `.gltf`, `.obj` or `.3ds`. SketchUp, Blender, Vectorworks and most 3D tools can export GLB. If it comes in the wrong size, set **Units in file**. If it lies on its back, set **Upright**. Without a model, a simple stage block is shown, sized under **Stage size**.
+- **Placing lights:** tap a light, then drag its arrows or type its position (metres: left/right, height, front/back). **Aim: tap the stage**, then tap where it should point. Lights you haven't placed hang at 6 m above their 2D layout position.
+- **MVR import:** consoles, CAD and visualisers (Vectorworks, Capture, grandMA3, Depence…) export MVR files. **Import MVR…** reads every light's name, position, aim and DMX address, plus the stage and truss geometry. You then choose which fixture type (channel layout) to use for each kind of light in the file.
+- Moving heads follow their pan, tilt and zoom in the 3D view. Light sources are approximate: they are for planning, not photometric accuracy.
 
 ## Songs and backing tracks (Playback, Ableton Live)
 
@@ -127,7 +155,7 @@ dim red green blue white strobe=0 -
 
 ```
 npm install         # optional: MIDI input module
-npm test            # unit tests (mixing, fades, patch, songs/MIDI, packet formats)
+npm test            # unit tests (mixing, fades, patch, songs/MIDI, live effects, MVR, packet formats)
 node server.js
 ```
 
@@ -136,5 +164,7 @@ Code layout:
 - `lib/engine.js`: show data, cue and scene playback, mixing and DMX rendering
 - `lib/output.js`: Art-Net, sACN and Enttec packets
 - `lib/profiles.js`: fixture types
-- `lib/midi.js`: MIDI input (CoreMIDI, through the optional `@julusian/midi` module)
+- `lib/midi.js`: MIDI input and clock (CoreMIDI, through the optional `@julusian/midi` module)
+- `lib/mvr.js`: MVR (zip + XML) reader
+- `public/stage3d.js`: 3D view (three.js, bundled in `public/vendor/three` under its MIT licence)
 - `public/`: the browser app (plain HTML, CSS and JS, with no build step)

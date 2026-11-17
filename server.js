@@ -9,6 +9,7 @@ const path = require('path');
 const { Engine, demoShow } = require('./lib/engine');
 const { Output } = require('./lib/output');
 const { MidiIn } = require('./lib/midi');
+const { readMvr } = require('./lib/mvr');
 
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -17,6 +18,7 @@ const SHOW_FILE = path.join(DATA_DIR, 'show.json');
 const RUNTIME_FILE = path.join(DATA_DIR, 'runtime.json');
 const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 const PUBLIC = path.join(__dirname, 'public');
+const ASSETS = path.join(DATA_DIR, 'assets');
 
 // ----- persistence ---------------------------------------------------------
 function readJson(file) {
@@ -144,10 +146,40 @@ midi.on('message', (data) => {
   }
 });
 midi.on('ports', () => broadcast('state', fullState()));
+midi.on('beat', (bpm) => {
+  try {
+    runAction({ type: 'tempo.beat', bpm });
+  } catch {}
+});
+midi.on('clockStop', () => runAction({ type: 'tempo.clockStop' }));
 midi.configure(engine.show.settings.midiInput);
 
 // ----- HTTP ----------------------------------------------------------------
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
+const MIME = { '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json', '.obj': 'text/plain', '.3ds': 'application/octet-stream', '.bin': 'application/octet-stream', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mtl': 'text/plain',
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
+
+function readRaw(req, limit) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > limit) {
+        reject(new Error(`File is too large (limit ${Math.round(limit / 1e6)} MB)`));
+        req.destroy();
+      } else chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+const safeName = (n) => path.basename(String(n || 'file')).replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^\.+/, '') || 'file';
+function saveAsset(rel, data) {
+  const file = path.normalize(path.join(ASSETS, rel));
+  if (!file.startsWith(ASSETS + path.sep)) throw new Error('Bad file name');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, data);
+}
 
 function readBody(req, limit = 5e6) {
   return new Promise((resolve, reject) => {
@@ -195,7 +227,38 @@ const server = http.createServer(async (req, res) => {
       } catch (e) {
         return json(res, 400, { ok: false, error: e.message });
       }
+      if (action.type === 'mvr.apply') return json(res, 200, { ok: true, skipped: engine.lastImportSkipped || [] });
       return json(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/upload/model' && req.method === 'POST') {
+      const name = safeName(url.searchParams.get('name'));
+      if (!/\.(glb|gltf|obj|3ds)$/i.test(name)) return json(res, 400, { ok: false, error: 'Use a .glb, .gltf, .obj or .3ds file (GLB works best)' });
+      const data = await readRaw(req, 300e6);
+      const rel = `models/${Date.now().toString(36)}-${name}`;
+      saveAsset(rel, data);
+      return json(res, 200, { ok: true, file: rel, name });
+    }
+    if (url.pathname === '/api/upload/mvr' && req.method === 'POST') {
+      const data = await readRaw(req, 500e6);
+      let mvr;
+      try {
+        mvr = readMvr(data);
+      } catch (e) {
+        return json(res, 400, { ok: false, error: e.message });
+      }
+      const dir = `mvr-${Date.now().toString(36)}`;
+      for (const [name, buf] of mvr.files) saveAsset(`${dir}/${name}`, buf);
+      const models = mvr.models.map((m) => ({ ...m, file: `${dir}/${m.file}` }));
+      return json(res, 200, { ok: true, fixtures: mvr.fixtures, types: mvr.types, models });
+    }
+    if (url.pathname.startsWith('/assets/')) {
+      const file = path.normalize(path.join(ASSETS, decodeURIComponent(url.pathname.slice(8))));
+      if (!file.startsWith(ASSETS + path.sep)) return json(res, 403, { error: 'Forbidden' });
+      return fs.readFile(file, (err, data) => {
+        if (err) return json(res, 404, { error: 'Not found' });
+        res.writeHead(200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Cache-Control': 'max-age=3600' });
+        res.end(data);
+      });
     }
     if (url.pathname === '/api/dmx') {
       const u = Number(url.searchParams.get('u')) || 1;
