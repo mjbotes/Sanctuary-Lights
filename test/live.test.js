@@ -33,7 +33,7 @@ test('live colour is recorded, group fader and effects are not baked into values
   e.dispatch({ type: 'look.record', name: 'Red pulse' });
   const look = e.show.looks.at(-1);
   assert.deepStrictEqual(look.values.f0, { dim: 1, green: 0, blue: 0 });
-  assert.deepStrictEqual(look.effects, [{ groupId: 'g', type: 'pulse', rate: 2 }]);
+  assert.deepStrictEqual(look.effects, [{ groupId: 'g', effectId: 'pulse', rate: 2, size: 1 }]);
 });
 
 test('effects stored in a look run when the look is active, live "off" overrides', () => {

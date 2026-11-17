@@ -4,6 +4,8 @@ A simple, free lighting controller for churches. It runs on a Mac, and volunteer
 
 - **Songs that follow your backing tracks:** plan the lights for every Intro, Verse, Chorus and Bridge. **Playback** (MultiTracks) or **Ableton Live** triggers them over MIDI, or an operator taps them live, or a mix of both.
 - **3D stage view:** load your church as a 3D model (`.glb`, `.gltf`, `.obj`, `.3ds`), or import a whole rig from an **MVR** file. You see real coloured beams while you program and run the service.
+- **FX & Presets:** dimmer/colour/position/beam presets that cues stay linked to, about 25 ready-made effects (including moving-head circles, figure 8, ballyhoo and sweeps), and an effect builder with waveforms, phase spread, groups and wings.
+- **Hot buttons:** Strobe and Flash on every screen, plus your own pads with keyboard shortcuts.
 - **Live control:** every group gets a fader, colour buttons, a Flash button and effects (pulse, chase, sparkle, rainbow, movement) locked to a tempo. The tempo comes from TAP, the song's BPM or Ableton's MIDI clock. This works on top of anything that's running.
 - **Live screen for volunteers:** a big **GO** button steps through the service cue list. Scene buttons ("Pulpit", "Baptism", "Worship wash") switch on over anything. There is a master fader and a blackout button.
 - **Program screen:** tap lights on a stage map, then set intensity, colour (swatches or a colour picker), pan/tilt, zoom and haze. Save the result as a cue or a scene.
@@ -53,6 +55,67 @@ How looks combine:
 - Scenes add on top. Each light uses the highest intensity of the cue and any active scenes, and colours blend with each scene's fader level.
 - Anything you are editing on the Program tab overrides both, until you press **Clear**.
 - The master fader and Blackout scale intensity only.
+
+## Hot buttons, pads and keyboard
+
+These work on **every tab**:
+
+| Key / button | Does |
+|---|---|
+| **Strobe** button or **S** (hold) | Strobes everything while held |
+| **Flash** button or **F** (hold) | Everything to full while held |
+| **B** | Blackout on/off |
+| **R** | Release all live changes (pads, effects, live colours) |
+| **T** | Tap tempo |
+| **1 … 0** (and any key you give a pad) | Pads |
+| **?** | Shortcut list |
+
+**Pads** (on the Live and Songs tabs) are your own live buttons. Each pad runs an **effect**, applies a **preset** or **flashes** a group (or all lights). It works either as **toggle** (tap on, tap off) or **hold** (only while pressed), and can have its own key. Ten pads come ready (Pulse, Chase, Sparkle, Wave, Rainbow, Beat strobe, Circle, Ballyhoo, Figure 8, Breathe). Tap **Edit pads** to change, add, reorder or delete them.
+
+## FX & Presets tab
+
+This is a dedicated area for building presets and effects.
+
+**Selection order matters.** Tap lights in the order an effect should travel (they get numbered), or tap a group to use the group's order. The same selection is used on the Program tab.
+
+### Presets
+
+**Dimmer**, **Colour**, **Position**, **Beam** and **All** presets work like this:
+
+- **Record:** set the lights (on the Program tab, or with other presets), select them, pick the type and tap **+ Record preset**. Only that type's values are stored. A colour preset only holds colour, so applying it never changes brightness or position.
+- **Apply:** select lights and tap a preset. Lights that weren't part of the recording get the first light's values, so a colour preset works on any colour light.
+- **Linked, not copied:** cues and looks remember which preset each light used. **Edit → ⟳ (update)** a preset, and every cue and look using it changes too (e.g. move the "Pulpit" position once). Changing a value by hand breaks the link for that value only.
+
+### Effects
+
+There are about 25 built-in effects:
+
+- **Dimmer:** pulse, chase, soft chase, wave, breathe, sparkle, odd/even, centre-out, strobe, beat strobe, random strobe
+- **Colour:** rainbow, colour cycle, two-colour chase, warm↔cool fade, fire flicker
+- **Position (moving heads):** circle, spread circle, figure 8, ballyhoo, pan sweep, tilt saw, tilt wave, gentle move
+- **Beam:** zoom pulse
+
+To use one, pick it, choose **Selected lights / All / a group**, set the speed and press **▶ Run**. Everything running is listed under **Running**, with **speed** and **size** controls. Size 50% means half as strong. Running effects are saved into cues and looks when you record them, and appear in the live strips' **More…** list.
+
+**Build your own** with **+ New effect**, or **Copy to edit** a built-in one. An effect has one or more **layers**. Each layer moves one thing:
+
+- **What it moves:** intensity, rainbow colour, colour A↔B, pan, tilt, zoom, focus or strobe channel
+- **Wave:** sine, triangle, saw up/down, on/off, hit, random
+- **Mode:** scale the planned level, exact values, or around the planned position (moving heads)
+- **Range:** low/high (or size)
+- **Width:** on-time for on/off and hit; 0 = one light at a time
+- **Speed ×** and **offset °:** e.g. a circle is pan + tilt with tilt offset 90°
+
+The effect as a whole has a speed (beats per cycle, locked to the tempo, or times per second) and a **phase** spread across the selected lights:
+
+| Setting | Meaning |
+|---|---|
+| **Phase from / to** | 0→0: all together. 0→360: spread evenly. 0→180: odd/even. |
+| **Groups** | Lights in blocks of N move together |
+| **Wings** | Mirror the spread from the middle out (2 wings = symmetrical) |
+| **Direction** | Forward or backward |
+
+The bar preview shows the result as you change things, and changes save straight away, even while the effect is running.
 
 ## Running it live
 
@@ -166,5 +229,6 @@ Code layout:
 - `lib/profiles.js`: fixture types
 - `lib/midi.js`: MIDI input and clock (CoreMIDI, through the optional `@julusian/midi` module)
 - `lib/mvr.js`: MVR (zip + XML) reader
+- `public/fxmath.js`: effect maths (waveforms, phase), shared by the server and the browser
 - `public/stage3d.js`: 3D view (three.js, bundled in `public/vendor/three` under its MIT licence)
 - `public/`: the browser app (plain HTML, CSS and JS, with no build step)

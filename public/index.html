@@ -16,6 +16,7 @@
     <button data-tab="live" class="on">Live</button>
     <button data-tab="songs">Songs</button>
     <button data-tab="program">Program</button>
+    <button data-tab="fx">FX &amp; Presets</button>
     <button data-tab="show">Cues &amp; Scenes</button>
     <button data-tab="patch">Patch</button>
     <button data-tab="setup">Setup</button>
@@ -51,6 +52,7 @@
         <div id="live3d" class="wrap3d view3d"></div>
       </div>
     </div>
+    <div class="panel padpanel" id="livePads"></div>
     <div class="panel buskpanel" id="liveBusk"></div>
   </section>
 
@@ -83,6 +85,7 @@
           <button id="prevSec" class="btn big">◀ Prev</button>
           <button id="nextSec" class="btn go">NEXT</button>
         </div>
+        <div class="padpanel inset" id="songsPads"></div>
         <div class="buskpanel inset" id="songsBusk"></div>
         <div class="panelhead"><h2>Edit song</h2><button class="btn small" id="editSongBtn">Show editor</button></div>
         <div id="songEditor" hidden>
@@ -166,6 +169,49 @@
           </div>
           <p class="hint">A <b>cue</b> saves the whole stage look and goes in the GO list. A <b>scene</b> saves only the lights you've changed here, so you can switch it on over anything (e.g. "Pulpit", "Baptism").</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FX & PRESETS -->
+  <section id="tab-fx" class="tab">
+    <div class="fx-grid">
+      <div class="panel">
+        <div class="panelhead"><h2>Selection</h2><div class="row"><button class="btn small" id="fxSelAll">All</button><button class="btn small" id="fxSelNone">None</button></div></div>
+        <div id="fxGroups" class="chips"></div>
+        <div id="fxSelList" class="selorder"></div>
+        <p class="hint">Tap lights in the order you want effects to travel. The order sets the phase: the first light starts, the last light finishes. The same selection is used on the Program tab.</p>
+
+        <div class="panelhead"><h2>Presets</h2><button class="btn small" id="presetEdit">Edit</button></div>
+        <div class="seg small" id="presetKinds">
+          <button data-kind="all-kinds" class="on">All</button><button data-kind="dim">Dimmer</button><button data-kind="color">Colour</button><button data-kind="position">Position</button><button data-kind="beam">Beam</button>
+        </div>
+        <div id="presetGrid" class="presetgrid"></div>
+        <div class="row wrap" style="margin-top:10px">
+          <button class="btn primary" id="presetRecord">+ Record preset</button>
+          <button class="btn" id="fxClearProg">Clear programmer</button>
+        </div>
+        <p class="hint">Set lights on the Program tab (or here with presets), select them, then record. Tap a preset to apply it to the selected lights. Cues and looks remember which preset they use: update the preset and they all change.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panelhead"><h2>Effects</h2><button class="btn small" id="fxNew">+ New effect</button></div>
+        <div class="seg small" id="fxCats">
+          <button data-cat="dim" class="on">Dimmer</button><button data-cat="color">Colour</button><button data-cat="position">Position</button><button data-cat="beam">Beam</button><button data-cat="custom">My effects</button>
+        </div>
+        <div id="fxList" class="fxlist"></div>
+        <div class="row wrap fxrun">
+          <span class="hint" id="fxPicked">Pick an effect.</span>
+          <select id="fxRunTarget"></select>
+          <select id="fxRunRate" title="Speed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+          <button class="btn primary" id="fxRun">▶ Run</button>
+        </div>
+
+        <div class="panelhead"><h2>Running</h2><button class="btn small warn" id="fxStopAll">Stop all</button></div>
+        <div id="fxRunning"></div>
+
+        <div class="panelhead"><h2 id="fxEdTitle">Effect editor</h2><div class="row"><button class="btn small" id="fxCopy">Copy to edit</button><button class="btn small warn" id="fxDelete">Delete</button></div></div>
+        <div id="fxEditor" class="fxeditor"></div>
       </div>
     </div>
   </section>
@@ -319,10 +365,53 @@
     <b id="gmVal">100%</b>
   </div>
   <button id="progBadge" class="btn small badge" hidden></button>
+  <button id="strobeBtn" class="btn hot" title="Hold to strobe everything (key S)">Strobe <kbd>S</kbd></button>
+  <button id="flashBtn" class="btn hot" title="Hold for everything at full (key F)">Flash <kbd>F</kbd></button>
+  <button id="helpBtn" class="btn small" title="Keyboard shortcuts (?)">?</button>
   <button id="blackout" class="btn bo">Blackout</button>
 </footer>
 
 <div id="toast" class="toast" hidden></div>
+<dialog id="padDialog" class="wide">
+  <form method="dialog" class="form" id="padForm">
+    <h3 id="padDlgTitle">Pad</h3>
+    <input type="hidden" name="id">
+    <div class="row">
+      <label>Name <input name="name" maxlength="24" required></label>
+      <label style="max-width:90px">Key <input name="key" maxlength="1" placeholder="—"></label>
+    </div>
+    <div class="row">
+      <label>Does <select name="kind"><option value="effect">Run an effect</option><option value="preset">Apply a preset</option><option value="flash">Flash to full</option></select></label>
+      <label>On <select name="groupId" id="padGroup"></select></label>
+    </div>
+    <div class="row">
+      <label class="pk-effect">Effect <select name="effectId" id="padEffect"></select></label>
+      <label class="pk-preset">Preset <select name="presetId" id="padPreset"></select></label>
+      <label class="pk-effect" style="max-width:90px">Speed <select name="rate"><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    </div>
+    <label>Button <select name="mode"><option value="toggle">Toggle: tap on, tap off</option><option value="hold">Hold: only while pressed</option></select></label>
+    <p class="hint">Keys: any letter or number except Space, T, S, F, B, R and ?.</p>
+    <div class="row" style="justify-content:flex-end"><button value="cancel" class="btn" formnovalidate>Cancel</button><button value="ok" class="btn primary">Save pad</button></div>
+  </form>
+</dialog>
+<dialog id="helpDialog" class="wide">
+  <form method="dialog">
+    <h3>Keyboard shortcuts</h3>
+    <table class="tbl keys">
+      <tr><td><kbd>Space</kbd></td><td>GO (Live tab) / next section (Songs tab)</td></tr>
+      <tr><td><kbd>←</kbd></td><td>Back / previous section</td></tr>
+      <tr><td><kbd>S</kbd> hold</td><td>Strobe everything</td></tr>
+      <tr><td><kbd>F</kbd> hold</td><td>Flash everything to full</td></tr>
+      <tr><td><kbd>B</kbd></td><td>Blackout on/off</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Tap tempo</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Release all live changes (pads, effects, live colours)</td></tr>
+      <tr><td><kbd>1</kbd>…<kbd>0</kbd> and others</td><td>Pads (shown on each pad)</td></tr>
+      <tr><td><kbd>?</kbd></td><td>This list</td></tr>
+    </table>
+    <p class="hint">Shortcuts work on every tab, except while typing in a box.</p>
+    <div class="row" style="justify-content:flex-end"><button value="ok" class="btn primary">Close</button></div>
+  </form>
+</dialog>
 <dialog id="mvrDialog" class="wide">
   <form method="dialog">
     <h3>Import MVR</h3>
@@ -335,6 +424,7 @@
   </form>
 </dialog>
 <dialog id="prompt"><form method="dialog"><h3 id="promptTitle"></h3><input id="promptInput"><div class="row"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary" id="promptOk">OK</button></div></form></dialog>
+<script src="fxmath.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

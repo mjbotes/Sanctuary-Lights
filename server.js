@@ -228,6 +228,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 400, { ok: false, error: e.message });
       }
       if (action.type === 'mvr.apply') return json(res, 200, { ok: true, skipped: engine.lastImportSkipped || [] });
+      if (action.type === 'effect.save') return json(res, 200, { ok: true, id: engine.lastSavedEffect });
       return json(res, 200, { ok: true });
     }
     if (url.pathname === '/api/upload/model' && req.method === 'POST') {
