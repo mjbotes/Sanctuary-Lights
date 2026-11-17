@@ -121,8 +121,13 @@ test('without a song, a look with the group name is used', () => {
 
 test('colour sync from group colour and from the slide image', () => {
   const e = engineWithSong();
+  // Default: the screen colour becomes the Primary colour of the palette
   e.dispatch({ type: 'settings.update', settings: { pp: { colorMode: 'group' } } });
   e.dispatch(slide('Chorus', [1, 0, 0]));
+  assert.strictEqual(e.paletteNow()[0], '#ff0000');
+  // Or it sets the live colour of light groups
+  e.dispatch({ type: 'settings.update', settings: { pp: { colorTarget: 'groups' } } });
+  e.dispatch(slide('Verse 1', [1, 0, 0]));
   assert.deepStrictEqual(e.rt.busk.g.color, [1, 0, 0]);
   e.dispatch({ type: 'settings.update', settings: { pp: { colorMode: 'slide' } } });
   e.dispatch({ type: 'pp.color', rgb: [0, 0, 1], key: 'P-1|4' });

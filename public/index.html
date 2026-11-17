@@ -382,6 +382,31 @@
             <p class="hint">By default, note <b id="noteBaseName">C1</b> (36) triggers a song's first section, the next note its second, and so on. Or use <b>Learn</b> in the song editor to map whatever your track app sends.</p>
           </fieldset>
           <fieldset>
+            <legend><label class="check"><input type="checkbox" name="oscEnabled"> OSC in (TouchOSC, Companion / Stream Deck, QLab…)</label></legend>
+            <label style="max-width:140px">UDP port <input name="oscPort" type="number" min="1024" max="65535"></label>
+            <div id="oscStatus" class="hint"></div>
+            <details class="oschelp"><summary>OSC addresses</summary>
+              <table class="tbl keys">
+                <tr><td><code>/sl/go</code> · <code>/sl/back</code></td><td>Cue list GO / back</td></tr>
+                <tr><td><code>/sl/next</code> · <code>/sl/prev</code></td><td>Next / previous song section</td></tr>
+                <tr><td><code>/sl/section "Chorus"</code> or <code>/sl/section/chorus</code></td><td>Go to a section of the current song (name or number)</td></tr>
+                <tr><td><code>/sl/song "Name"</code> · <code>/sl/song 3</code></td><td>Pick a song</td></tr>
+                <tr><td><code>/sl/look "Name"</code> · <code>/sl/cue 2</code></td><td>Show a look / go to a cue</td></tr>
+                <tr><td><code>/sl/scene "Pulpit" [0..1]</code></td><td>Toggle a scene, or set its level</td></tr>
+                <tr><td><code>/sl/pad 3 [1|0]</code> · <code>/sl/pad/q</code></td><td>Press / release a pad (number, key or name)</td></tr>
+                <tr><td><code>/sl/gm 0.8</code> · <code>/sl/blackout 1</code></td><td>Master level / blackout</td></tr>
+                <tr><td><code>/sl/strobe 1|0</code> · <code>/sl/flash 1|0</code></td><td>Strobe / flash all while 1</td></tr>
+                <tr><td><code>/sl/tap</code> · <code>/sl/bpm 120</code></td><td>Tempo</td></tr>
+                <tr><td><code>/sl/mode hybrid</code> · <code>/sl/hold 1</code> · <code>/sl/release</code></td><td>Follow mode, hold, release live changes</td></tr>
+                <tr><td><code>/sl/palette/primary "#ff8800"</code> (or r g b 0..1)</td><td>Change a palette colour for this song (until the song changes)</td></tr>
+                <tr><td><code>/sl/group/Back wash/level 0.5</code></td><td>Group fader</td></tr>
+                <tr><td><code>/sl/group/Back wash/color "secondary"</code></td><td>Group colour: primary / secondary / tertiary, "#rrggbb", r g b, or nothing to release</td></tr>
+                <tr><td><code>/sl/group/Back wash/fx "Chase"</code> · <code>/sl/group/Back wash/flash 1</code></td><td>Group effect (by name; nothing = off) / flash</td></tr>
+              </table>
+              <p class="hint">Buttons that send 1 on press and 0 on release work as expected. Any other OSC message can trigger a song section with <b>Learn</b> in the song editor.</p>
+            </details>
+          </fieldset>
+          <fieldset>
             <legend>ProPresenter</legend>
             <label class="check plain"><input type="checkbox" name="ppEnabled"> Follow ProPresenter</label>
             <div class="row">
@@ -393,6 +418,8 @@
             <label class="check plain"><input type="checkbox" name="ppSongs"> A presentation picks the song with the same name</label>
             <label>Light colour follows the screen
               <select name="ppColorMode"><option value="off">Off</option><option value="group">ProPresenter group colour</option><option value="slide">Colour of the slide on screen</option></select></label>
+            <label>…and it changes
+              <select name="ppColorTarget"><option value="primary">the Primary colour (everything using Primary follows)</option><option value="groups">the live colour of these light groups:</option></select></label>
             <div id="ppColorGroups" class="chips"></div>
             <p class="hint">In ProPresenter: Settings → Network → tick <b>Enable Network</b> and note the port. Both computers must be on the same network (or use <code>localhost</code> on the same Mac). Colour sync sets the live colour of the groups ticked above (all groups if none).</p>
           </fieldset>
@@ -427,6 +454,7 @@
     <input type="range" id="gm" min="0" max="1000" value="1000">
     <b id="gmVal">100%</b>
   </div>
+  <div class="palbar" id="palBar" title="Primary / secondary / tertiary colours (each song can have its own)"></div>
   <button id="progBadge" class="btn small badge" hidden></button>
   <button id="strobeBtn" class="btn hot" title="Hold to strobe everything (key S)">Strobe <kbd>S</kbd></button>
   <button id="flashBtn" class="btn hot" title="Hold for everything at full (key F)">Flash <kbd>F</kbd></button>

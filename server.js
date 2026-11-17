@@ -11,6 +11,7 @@ const { Output } = require('./lib/output');
 const { MidiIn } = require('./lib/midi');
 const { readMvr } = require('./lib/mvr');
 const { ProPresenter } = require('./lib/propresenter');
+const { OscIn } = require('./lib/osc');
 
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -105,6 +106,7 @@ function fullState() {
     outputError: output.lastError,
     midi: midi.status(),
     pp: propresenter.state,
+    osc: osc.status(),
   };
 }
 function broadcast(event, data) {
@@ -134,6 +136,8 @@ function runAction(action) {
     if (engine.show.settings.fps !== before.fps) startLoop();
     if (engine.show.settings.midiInput !== before.midiInput) midi.configure(engine.show.settings.midiInput);
     propresenter.configure(engine.show.settings.pp);
+    const o = engine.show.settings.osc || {};
+    osc.configure(o.enabled !== false, o.port || 8000);
   }
   if (!changed.show && !changed.runtime) return;
   saveRuntimeSoon();
@@ -178,6 +182,21 @@ propresenter.on('slide', (slide) => {
 });
 propresenter.on('status', () => broadcast('state', fullState()));
 propresenter.configure(engine.show.settings.pp);
+
+// ----- OSC in ------------------------------------------------------------------
+const osc = new OscIn(console);
+osc.on('message', (m) => {
+  try {
+    runAction({ type: 'osc.message', address: m.address, args: m.args });
+  } catch (e) {
+    console.warn('OSC:', e.message);
+  }
+});
+osc.on('status', () => broadcast('state', fullState()));
+{
+  const o = engine.show.settings.osc || {};
+  osc.configure(o.enabled !== false, o.port || 8000);
+}
 
 // ----- HTTP ----------------------------------------------------------------
 const MIME = { '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.aac': 'audio/aac', '.flac': 'audio/flac', '.ogg': 'audio/ogg', '.aif': 'audio/aiff', '.aiff': 'audio/aiff', '.caf': 'audio/x-caf',
@@ -373,6 +392,7 @@ module.exports.shutdown = () => {
   output.close();
   midi.close();
   propresenter.close();
+  osc.close();
 };
 if (!process.env.SL_EMBEDDED) {
   process.on('SIGINT', shutdown);

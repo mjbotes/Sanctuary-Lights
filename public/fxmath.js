@@ -92,7 +92,7 @@
   // Layer attributes: dim, hue (rainbow), color (mix between colorA and colorB), pan, tilt, zoom, focus, strobe, ...
   // Modes: 'scale' (dimmer: multiplies the planned level), 'abs' (low..high), 'rel' (moves around the planned value; size = high - low).
   const ATTRS = {
-    dim: 'Intensity', hue: 'Colour: rainbow', color: 'Colour: A ↔ B', pan: 'Pan', tilt: 'Tilt', zoom: 'Zoom', focus: 'Focus', strobe: 'Strobe channel',
+    dim: 'Intensity', hue: 'Colour: rainbow', color: 'Colour: A ↔ B', palette: 'Colour: primary → secondary → tertiary', pan: 'Pan', tilt: 'Tilt', zoom: 'Zoom', focus: 'Focus', strobe: 'Strobe channel',
   };
 
   const L = (o) => ({ wave: 'sine', mode: 'abs', low: 0, high: 1, width: 0, speed: 1, offset: 0, ...o });
@@ -113,6 +113,10 @@
     { id: 'rainbow', name: 'Rainbow', cat: 'color', speed: { beats: 8 }, phaseTo: 360, layers: [L({ attr: 'hue', wave: 'saw' })] },
     { id: 'rainbow-all', name: 'Colour cycle', cat: 'color', speed: { beats: 16 }, layers: [L({ attr: 'hue', wave: 'saw' })] },
     { id: 'color-chase', name: 'Red / blue chase', cat: 'color', speed: { beats: 2 }, phaseTo: 360, layers: [L({ attr: 'color', wave: 'square', width: 0.5, colorA: '#ff0000', colorB: '#0028ff' })] },
+    { id: 'pal-chase', name: 'Palette chase (P/S/T)', cat: 'color', speed: { beats: 3 }, phaseTo: 360, layers: [L({ attr: 'palette', wave: 'saw' })] },
+    { id: 'pal-fade', name: 'Palette fade', cat: 'color', speed: { beats: 12 }, layers: [L({ attr: 'palette', wave: 'saw', smooth: true })] },
+    { id: 'pal-spread', name: 'Palette spread', cat: 'color', speed: { beats: 24 }, phaseTo: 360, layers: [L({ attr: 'palette', wave: 'saw', smooth: true })] },
+    { id: 'pal-alt', name: 'Primary / secondary alternate', cat: 'color', speed: { beats: 2 }, phaseTo: 180, layers: [L({ attr: 'color', wave: 'square', width: 0.5, colorA: 'pal:1', colorB: 'pal:2' })] },
     { id: 'warm-cool', name: 'Warm ↔ cool fade', cat: 'color', speed: { beats: 8 }, phaseTo: 180, layers: [L({ attr: 'color', colorA: '#ffb070', colorB: '#a8c8ff' })] },
     { id: 'fire', name: 'Fire flicker', cat: 'color', speed: { beats: 0.25 }, layers: [L({ attr: 'color', wave: 'random', width: 0.5, colorA: '#ff2a00', colorB: '#ff9a00' }), L({ attr: 'dim', mode: 'scale', wave: 'random', low: 0.6, width: 0.6, speed: 1.3 })] },
     // Position (moving heads)

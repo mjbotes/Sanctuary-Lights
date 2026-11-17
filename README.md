@@ -97,6 +97,44 @@ How looks combine:
 - Anything you are editing on the Program tab overrides both, until you press **Clear**.
 - The master fader and Blackout scale intensity only.
 
+## Primary, secondary and tertiary colours
+
+There is always a three-colour palette: **Primary (P)**, **Secondary (S)** and **Tertiary (T)**. It's shown at the bottom of every screen.
+
+- **Each song has its own palette.** Tap a swatch to change it, and the change is saved to the current song. With no song picked, you're editing the default colours that every song starts with. **↺** puts a song back to the default colours.
+- **Use the palette instead of fixed colours:**
+  - **P / S / T** on the Program tab
+  - the **P S T** buttons in each Live control strip
+  - **Primary / Secondary / Tertiary** in pads ("Apply a preset")
+  - **Colour A / B** in the effect editor
+- **Looks stay linked.** A cue or look recorded with Primary on the back wash and Secondary on the front stays linked to the palette. One "Chorus" look then shows each song in its own colours, and changing a song's Primary recolours everything using it, even while it's on stage.
+- **Palette effects:** *Palette chase*, *Palette fade*, *Palette spread* and *Primary / secondary alternate*, or the "primary → secondary → tertiary" layer in your own effects.
+- **Live changes:** ProPresenter colour sync sets the **Primary** colour by default, and OSC can set any of the three (`/sl/palette/primary`). Both last until the song changes; a gold outline on the swatch shows a live change.
+
+## OSC
+
+Sanctuary Lights listens for OSC on **UDP port 8000** (change it in Setup → OSC). Use TouchOSC, Bitfocus Companion / Stream Deck, QLab, Open Stage Control, Ableton (with an OSC device), or anything else that sends OSC. Point it at the lighting computer's address (shown in Setup) and the port.
+
+| Address | Does |
+|---|---|
+| `/sl/go`, `/sl/back` | Cue list GO / back |
+| `/sl/next`, `/sl/prev` | Next / previous song section |
+| `/sl/section "Chorus"` or `/sl/section/chorus` | Section of the current song (name or number) |
+| `/sl/song "Name"` / `/sl/song 3` | Pick a song |
+| `/sl/look "Name"`, `/sl/cue 2` | Show a look / go to a cue |
+| `/sl/scene "Pulpit" [level]` | Toggle a scene, or set its level 0–1 |
+| `/sl/pad 3 [1/0]`, `/sl/pad/q` | Press / release a pad (number, key or name) |
+| `/sl/gm 0.8`, `/sl/blackout 1` | Master / blackout |
+| `/sl/strobe 1/0`, `/sl/flash 1/0` | Strobe / flash everything while 1 |
+| `/sl/tap`, `/sl/bpm 120` | Tempo |
+| `/sl/mode hybrid`, `/sl/hold 1`, `/sl/release` | Follow mode, hold, release live changes |
+| `/sl/palette/primary "#ff8800"` (or r g b, 0–1) | Change a palette colour until the song changes |
+| `/sl/group/<group>/level 0.5` | Group fader |
+| `/sl/group/<group>/color "secondary"` | Group colour: primary / secondary / tertiary, `#rrggbb`, r g b, or no argument to release |
+| `/sl/group/<group>/fx "Chase"`, `/sl/group/<group>/flash 1` | Group effect by name (no argument = off) / flash |
+
+Buttons that send 1 on press and 0 on release work as expected. Any other OSC message can trigger a song or section with **Learn** in the song editor, the same way as MIDI. Setup shows the last message received and what it did.
+
 ## Hot buttons, pads and keyboard
 
 These work on **every tab**:
@@ -360,6 +398,7 @@ Code layout:
 - `lib/midi.js`: MIDI input and clock (CoreMIDI, through the optional `@julusian/midi` module)
 - `lib/mvr.js`: MVR (zip + XML) reader
 - `lib/propresenter.js`: ProPresenter network API client
+- `lib/osc.js`: OSC receiver (UDP, messages and bundles)
 - `public/geom.js`: stage geometry (positions, beam directions, screen hits), shared by the server and the 3D view
 - `public/audio/`: tracks engine
   - `engine.js`: playback, routing, vocal chain

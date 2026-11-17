@@ -80,6 +80,7 @@ function connect() {
     S.runtime = d.runtime;
     S.midi = d.midi || S.midi;
     S.ppConn = d.pp || null;
+    S.oscConn = d.osc || null;
     for (const id of [...S.sel]) if (!S.show.fixtures.some((f) => f.id === id)) S.sel.delete(id);
     renderAll();
     $('#outErr').textContent = d.outputError || '';
@@ -332,6 +333,8 @@ function renderRuntime() {
   tracksRuntime();
   renderPpStatus();
   ppSlideChanged();
+  renderPalette();
+  renderOscStatus();
 }
 $('#goBtn').onclick = () => act('cue.go');
 $('#backBtn').onclick = () => act('cue.back');
@@ -391,11 +394,21 @@ const SWATCHES = [
   ['Sky', '#4aa8ff'], ['Blue', '#0028ff'], ['Indigo', '#3c00ff'], ['Purple', '#8a00ff'], ['Magenta', '#ff00d0'], ['Pink', '#ff6aa8'],
 ];
 const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-$('#swatches').replaceChildren(
-  ...SWATCHES.map(([name, hex]) =>
-    h('button', { style: { background: hex }, title: name, onclick: () => setColor(hex) }, h('span', {}, name))
-  )
-);
+function renderProgSwatches() {
+  const pal = (S.runtime && S.runtime.palette) || ['#ffb070', '#2050ff', '#a020f0'];
+  $('#swatches').replaceChildren(
+    ...['Primary', 'Secondary', 'Tertiary'].map((name, i) =>
+      h('button', { className: 'palbtn', style: { background: pal[i] }, title: `${name} colour of the song (stays linked: change the song's ${name.toLowerCase()} and this follows)`, onclick: () => setPalette(i + 1) }, h('span', {}, name.slice(0, 3).toUpperCase()))),
+    ...SWATCHES.map(([name, hex]) =>
+      h('button', { style: { background: hex }, title: name, onclick: () => setColor(hex) }, h('span', {}, name))));
+}
+renderProgSwatches();
+function setPalette(n) {
+  if (!S.sel.size) return toast('Select some lights first', true);
+  act('preset.apply', { id: `pal:${n}`, fixtures: effSel() });
+  const off = selected().filter((f) => (S.live.fixtures[f.id]?.d ?? 0) === 0 && profOf(f).attrs.includes('dim'));
+  if (off.length) act('prog.set', { fixtures: off.map((f) => f.id), values: { dim: 1 } });
+}
 function setColor(hex) {
   if (!S.sel.size) return toast('Select some lights first', true);
   act('prog.color', { fixtures: effSel(), rgb: hexToRgb(hex) });
@@ -658,6 +671,10 @@ function renderSettings() {
   f.ppSongs.checked = pp.songs !== false;
   f.ppColorMode.value = pp.colorMode || 'off';
   f.screenProtect.value = s.screenProtect || 'warn';
+  f.ppColorTarget.value = pp.colorTarget || 'primary';
+  f.oscEnabled.checked = !s.osc || s.osc.enabled !== false;
+  f.oscPort.value = (s.osc && s.osc.port) || 8000;
+  renderOscStatus();
   $('#ppColorGroups').replaceChildren(...S.show.groups.map((g) => {
     const on = (pp.colorGroups || []).includes(g.id);
     return h('button', { type: 'button', className: `chip${on ? ' on' : ''}`, style: on ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}, onclick: () => {
@@ -700,7 +717,8 @@ $('#setForm').addEventListener('submit', async (e) => {
     artnet: f.artnet.checked, artnetTarget: f.artnetTarget.value, artnetBase: Number(f.artnetBase.value),
     sacn: f.sacn.checked, sacnInterface: f.sacnInterface.value, sacnUnicast: f.sacnUnicast.value, sacnPriority: f.sacnPriority.value,
     enttec: f.enttec.checked, enttecPort: f.enttecPort.value, enttecUniverse: f.enttecUniverse.value, fps: f.fps.value,
-    pp: { enabled: f.ppEnabled.checked, host: f.ppHost.value, port: f.ppPort.value, sections: f.ppSections.checked, songs: f.ppSongs.checked, colorMode: f.ppColorMode.value },
+    pp: { enabled: f.ppEnabled.checked, host: f.ppHost.value, port: f.ppPort.value, sections: f.ppSections.checked, songs: f.ppSongs.checked, colorMode: f.ppColorMode.value, colorTarget: f.ppColorTarget.value },
+    osc: { enabled: f.oscEnabled.checked, port: f.oscPort.value },
     screenProtect: f.screenProtect.value,
     midiInput: f.midiInput.value, midiOutput: f.midiOutput.value, midiChannel: f.midiChannel.value, noteBase: f.noteBase.value, pcSelectsSong: f.pcSelectsSong.checked,
   };
@@ -750,6 +768,8 @@ const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 
 const noteName = (n) => `${NOTE_NAMES[n % 12]}${Math.floor(n / 12) - 2}`; // Ableton naming: 60 = C3
 function trigLabel(t) {
   if (!t) return '';
+  if (t.t === 'osc') return `OSC ${t.a}${t.v !== undefined ? ` "${t.v}"` : ''}`;
+  if (t.t === 'track') return `Track marker`;
   if (t.t === 'note') return `Note ${noteName(t.n)} (${t.n}) · ch ${t.ch}`;
   if (t.t === 'cc') return `CC ${t.n} · ch ${t.ch}`;
   return `Program ${t.n} · ch ${t.ch}`;
@@ -1033,6 +1053,7 @@ function renderBusk() {
           h('div', { className: 'bk-head' }, h('b', {}, g.name), h('span', { className: 'lvl' }, '100%'),
             h('button', { className: 'btn flash', title: 'Hold for full' }, 'Flash')),
           h('input', { type: 'range', min: 0, max: 1000, value: 1000, className: 'bk-level', 'aria-label': `${g.name} level` }),
+          !colour ? null : h('div', { className: 'bk-pal' }, ...['P', 'S', 'T'].map((l, i) => h('button', { 'data-brole': i + 1, title: ['Primary', 'Secondary', 'Tertiary'][i] }, l))),
           !colour ? null : h('div', { className: 'bk-colors' },
             ...BUSK_COLORS.map(([name, hex]) => h('button', { title: name, style: { background: hex }, 'data-bcolor': hex })),
             h('button', { className: 'x', title: 'Back to the planned colour', 'data-bcolor': '' }, '×')),
@@ -1064,8 +1085,14 @@ function updateBusk() {
     const lvl = card.querySelector('.bk-level');
     if (!lvl.dragging) lvl.value = Math.round(level * 1000);
     card.querySelector('.lvl').textContent = pct(level);
-    const hex = b.color ? rgbToHex(b.color) : null;
+    const isRole = typeof b.color === 'string';
+    const hex = b.color && !isRole ? rgbToHex(b.color) : null;
     for (const c of card.querySelectorAll('[data-bcolor]')) c.classList.toggle('on', !!hex && c.dataset.bcolor === hex);
+    const pal = S.runtime.palette || [];
+    for (const c of card.querySelectorAll('[data-brole]')) {
+      c.style.background = pal[c.dataset.brole - 1] || '#888';
+      c.classList.toggle('on', isRole && b.color === `pal:${c.dataset.brole}`);
+    }
     const live = b.fx && b.fx !== 'off' ? b.fx.type : b.fx === 'off' ? 'off' : null;
     const auto = stored.get(card.dataset.g);
     for (const btn of card.querySelectorAll('[data-fx]')) {
@@ -1108,6 +1135,7 @@ document.addEventListener('contextmenu', (e) => e.target.closest('.flash') && e.
 document.addEventListener('click', async (e) => {
   const t = e.target;
   const card = t.closest('.bk-card');
+  if (card && t.dataset.brole) return act('busk.color', { groupId: card.dataset.g, role: Number(t.dataset.brole) });
   if (card && t.dataset.bcolor !== undefined) {
     return act('busk.color', { groupId: card.dataset.g, rgb: t.dataset.bcolor ? hexToRgb(t.dataset.bcolor) : null });
   }
@@ -1152,7 +1180,7 @@ function effectOptions(selected) {
 S.padEdit = false;
 function padLabel(p) {
   if (p.kind === 'effect') return (effectById(p.effectId) || {}).name || 'Effect?';
-  if (p.kind === 'preset') return (S.show.presets.find((x) => x.id === p.presetId) || {}).name || 'Preset?';
+  if (p.kind === 'preset') return /^pal:/.test(p.presetId || '') ? ['Primary', 'Secondary', 'Tertiary'][p.presetId.slice(4) - 1] : (S.show.presets.find((x) => x.id === p.presetId) || {}).name || 'Preset?';
   return 'Flash';
 }
 function renderPads() {
@@ -1251,7 +1279,9 @@ function openPad(p) {
   const pad = p || { name: '', kind: 'effect', effectId: 'pulse', presetId: '', groupId: '', mode: 'toggle', key: '', rate: 1 };
   $('#padDlgTitle').textContent = p ? `Edit pad "${p.name}"` : 'New pad';
   $('#padEffect').replaceChildren(...effectOptions(pad.effectId));
-  $('#padPreset').replaceChildren(...(S.show.presets.length ? S.show.presets.map((x) => h('option', { value: x.id, selected: x.id === pad.presetId }, `${x.name} (${KIND_NAMES[x.kind]})`)) : [h('option', { value: '' }, 'No presets yet')]));
+  $('#padPreset').replaceChildren(
+    ...['Primary', 'Secondary', 'Tertiary'].map((n, i) => h('option', { value: `pal:${i + 1}`, selected: pad.presetId === `pal:${i + 1}` }, `${n} colour (palette)`)),
+    ...S.show.presets.map((x) => h('option', { value: x.id, selected: x.id === pad.presetId }, `${x.name} (${KIND_NAMES[x.kind]})`)));
   $('#padGroup').replaceChildren(h('option', { value: '' }, 'All lights'), ...S.show.groups.map((g) => h('option', { value: g.id, selected: g.id === pad.groupId }, g.name)));
   f.id.value = p ? p.id : '';
   f.name.value = pad.name;
@@ -1457,15 +1487,15 @@ function renderFxEditor() {
   const layers = draft.layers.map((l, li) => {
     const attrSel = selIn(l.attr, Object.entries(FXM.ATTRS), (v) => { l.attr = v; if (v === 'dim') l.mode = 'scale'; else if (v === 'pan' || v === 'tilt') l.mode = 'rel'; else l.mode = 'abs'; });
     attrSel.dataset.rerender = '1';
-    const isColor = l.attr === 'color' || l.attr === 'hue';
+    const isColor = l.attr === 'color' || l.attr === 'hue' || l.attr === 'palette';
     const modes = l.attr === 'dim' ? [['scale', 'Scale planned level'], ['abs', 'Exact level']] : isColor ? [['abs', '—']] : [['rel', 'Around planned position'], ['abs', 'Exact values']];
     const pctIn = (k, label) => field(label, numIn(Math.round((l[k] ?? 0) * 100), (v) => { l[k] = Math.max(0, Math.min(100, v)) / 100; }, { min: 0, max: 100, step: 1 }));
     const rows = [
       h('div', { className: 'row' }, field('Moves', attrSel), field('Wave', selIn(l.wave, Object.entries(FXM.WAVES), (v) => { l.wave = v; })),
         !isColor ? field('Mode', selIn(l.mode, modes, (v) => { l.mode = v; })) : null),
       h('div', { className: 'row' },
-        l.attr === 'color' ? field('Colour A', (() => { const c = h('input', { type: 'color', value: l.colorA, disabled: ro }); c.addEventListener('change', () => { l.colorA = c.value; saveDraft(draft); }); return c; })()) : pctIn('low', l.mode === 'rel' ? 'From %' : 'Low %'),
-        l.attr === 'color' ? field('Colour B', (() => { const c = h('input', { type: 'color', value: l.colorB, disabled: ro }); c.addEventListener('change', () => { l.colorB = c.value; saveDraft(draft); }); return c; })()) : pctIn('high', l.mode === 'rel' ? 'To % (size)' : 'High %'),
+        l.attr === 'color' ? field('Colour A', colorPick(l, 'colorA', ro, draft)) : l.attr === 'palette' ? field('Blend', selIn(l.smooth ? '1' : '0', [['0', 'Steps (P, S, T)'], ['1', 'Smooth fade']], (v) => { l.smooth = v === '1'; })) : pctIn('low', l.mode === 'rel' ? 'From %' : 'Low %'),
+        l.attr === 'color' ? field('Colour B', colorPick(l, 'colorB', ro, draft)) : l.attr === 'palette' ? null : pctIn('high', l.mode === 'rel' ? 'To % (size)' : 'High %'),
         pctIn('width', 'Width % (0 = auto)'),
         field('Speed ×', numIn(l.speed ?? 1, (v) => { l.speed = v; }, { step: 0.5, min: 0.125 })),
         field('Offset °', numIn(l.offset ?? 0, (v) => { l.offset = v; }, { step: 15 }))),
@@ -1537,8 +1567,9 @@ $('#fxDelete').onclick = () => {
       if (!r) continue;
       let color = '#f2b33d';
       if (r.layer.attr === 'hue') { const [R, G, B] = FXM.hsvToRgb(((r.value % 1) + 1) % 1, 1, 1); color = `rgb(${R * 255},${G * 255},${B * 255})`; }
-      if (r.layer.attr === 'color') { const a = FXM.hexToRgb(r.layer.colorA), b = FXM.hexToRgb(r.layer.colorB); color = `rgb(${a.map((v, k) => (v + (b[k] - v) * r.w) * 255).join(',')})`; }
-      const v = r.layer.attr === 'hue' || r.layer.attr === 'color' ? 1 : r.layer.mode === 'rel' ? r.w : r.value;
+      if (r.layer.attr === 'color') { const a = tokenRgb(r.layer.colorA), b = tokenRgb(r.layer.colorB); color = `rgb(${a.map((v, k) => (v + (b[k] - v) * r.w) * 255).join(',')})`; }
+      if (r.layer.attr === 'palette') { const x = (((r.value % 1) + 1) % 1) * 3, i0 = Math.floor(x) % 3; const a = tokenRgb(`pal:${i0 + 1}`), b = tokenRgb(`pal:${((i0 + 1) % 3) + 1}`); const f = r.layer.smooth ? x - Math.floor(x) : 0; color = `rgb(${a.map((v, k) => (v + (b[k] - v) * f) * 255).join(',')})`; }
+      const v = r.layer.attr === 'hue' || r.layer.attr === 'color' || r.layer.attr === 'palette' ? 1 : r.layer.mode === 'rel' ? r.w : r.value;
       const bh = Math.max(2, v * (H - 8));
       ctx.fillStyle = color;
       ctx.fillRect(i * bw + 3, H - 4 - bh, bw - 6, bh);
@@ -2086,6 +2117,57 @@ function renderTricks() {
             act('prog.fan', { fixtures: effSel(), attr: fanAttr.value, from: fanFrom.value / 100, to: fanTo.value / 100 });
           } }, 'Apply')))),
     h('p', { className: 'hint' }, 'Tricks work on the current selection. Phase and Speed shape effects you run on it. Fade and Delay are saved into the next cue or look you record, so the lights change one after another. Width splits the selection into parts: programming then goes to the active part only.'));
+}
+
+// ----- Palette: primary / secondary / tertiary -------------------------------------
+const PAL_LABELS = ['Primary', 'Secondary', 'Tertiary'];
+function tokenRgb(tok) {
+  const m = /^pal:([123])$/.exec(tok || '');
+  const hex = m ? ((S.runtime && S.runtime.palette) || [])[m[1] - 1] || '#ffffff' : tok;
+  return FXM.hexToRgb(hex);
+}
+function colorPick(l, key, ro, draft) {
+  const isPal = /^pal:/.test(l[key] || '');
+  const sel = h('select', { disabled: ro }, ...PAL_LABELS.map((n, i) => h('option', { value: `pal:${i + 1}`, selected: l[key] === `pal:${i + 1}` }, n)), h('option', { value: 'custom', selected: !isPal }, 'Custom…'));
+  const pick = h('input', { type: 'color', value: isPal ? '#ffffff' : l[key], disabled: ro, hidden: isPal });
+  sel.addEventListener('change', () => {
+    l[key] = sel.value === 'custom' ? pick.value : sel.value;
+    pick.hidden = sel.value !== 'custom';
+    saveDraft(draft);
+  });
+  pick.addEventListener('change', () => { l[key] = pick.value; saveDraft(draft); });
+  return h('div', { className: 'colsel' }, sel, pick);
+}
+function renderPalette() {
+  if (!S.show || !S.runtime.palette) return;
+  const box = $('#palBar');
+  const pal = S.runtime.palette;
+  const live = S.runtime.paletteLive || {};
+  const song = S.show.songs.find((x) => x.id === S.runtime.songId);
+  const sig = JSON.stringify([pal, live, song && song.id, S.runtime.paletteSource]);
+  if (sig !== box.dataset.sig && !box.contains(document.activeElement)) {
+    box.dataset.sig = sig;
+    box.replaceChildren(
+      ...pal.map((c, i) => {
+        const inp = h('input', { type: 'color', value: c, title: `${PAL_LABELS[i]} colour${song ? ` of "${song.name}"` : ' (default)'}` });
+        inp.addEventListener('input', () => actThrottled(`pal${i}`, 'palette.set', { index: i, color: inp.value, scope: 'live' }));
+        inp.addEventListener('change', () => act('palette.set', { index: i, color: inp.value }));
+        return h('label', { className: `palsw${live[i] ? ' live' : ''}`, style: { background: c } }, inp, h('b', {}, ['P', 'S', 'T'][i]));
+      }),
+      h('span', { className: 'lbl' }, song ? (S.runtime.paletteSource === 'song' ? `${song.name} colours` : 'Default colours') : 'Default colours',
+        song && S.runtime.paletteSource === 'song' ? h('button', { className: 'btn small', style: { padding: '0 4px', marginLeft: '4px', fontSize: '10px' }, title: 'Use the default colours for this song', onclick: () => act('palette.reset') }, '↺') : null));
+  }
+  renderProgSwatches();
+}
+function renderOscStatus() {
+  const el = $('#oscStatus');
+  if (!el || !S.show) return;
+  const o = S.oscConn;
+  const last = S.runtime.lastOsc;
+  const port = (S.show.settings.osc && S.show.settings.osc.port) || 8000;
+  el.replaceChildren(
+    o && o.listening ? h('span', { style: { color: 'var(--go-hi)' } }, `● Listening on UDP ${port}`) : h('span', { style: { color: '#ff8a80' } }, o && o.error ? `● ${o.error}` : '● Off'),
+    last ? ` · last: ${last.address}${last.args && last.args.length ? ` ${last.args.map((x) => JSON.stringify(x)).join(' ')}` : ''} → ${last.result}` : '');
 }
 
 // ----- ProPresenter ---------------------------------------------------------------
