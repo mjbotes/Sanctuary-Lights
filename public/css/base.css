@@ -68,3 +68,42 @@ main { flex: 1; overflow: auto; padding: 12px; }
 .btn.warn { background: #3a1e1e; border-color: #5e2b2b; }
 .btn.big { font-size: 18px; padding: 16px; }
 .btn:disabled { opacity: .4; cursor: default; }
+
+/* top bar buttons */
+.iconbtn { font-size: 16px; padding: 4px 10px; }
+.rolebadge { background: #26406b; border-color: #34578f; }
+
+/* login */
+.login { position: fixed; inset: 0; background: #07080bf2; z-index: 50; display: grid; place-items: center; }
+.pinpad { width: min(320px, 90vw); text-align: center; }
+.pinpad .logo.big { width: 44px; height: 44px; margin: 0 auto 8px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6d8, var(--accent) 55%, #8a5a00); box-shadow: 0 0 24px #f2b33d88; }
+.pinpad h2 { color: var(--text); font-size: 18px; text-transform: none; letter-spacing: 0; }
+.pindots { font-size: 26px; letter-spacing: .3em; margin: 10px 0 16px; min-height: 34px; color: var(--accent); }
+.pinpad .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pinpad .keys .btn { font-size: 22px; padding: 16px 0; }
+.shake { animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+/* panic */
+.btn.panic { background: #3a2a10; border-color: #8a6a20; color: var(--accent); font-weight: 700; padding: 12px 14px; user-select: none; -webkit-user-select: none; position: relative; overflow: hidden; }
+.btn.panic .fill { position: absolute; left: 0; bottom: 0; top: 0; background: #f2b33d55; width: 0; }
+
+/* snapshots */
+.snaprow { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+
+/* volunteer screen */
+.simple { display: flex; flex-direction: column; gap: 14px; max-width: 900px; margin: 0 auto; }
+.simple-song { font-size: 18px; padding: 10px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; color: var(--text); width: 100%; }
+.simple-now { text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.simple-now b { font-size: 34px; }
+.simple-now small { color: var(--muted); font-size: 14px; }
+.simple-go { display: grid; grid-template-columns: 1fr 3fr; gap: 10px; }
+.simple-go .btn.go { font-size: 30px; padding: 30px 10px; }
+.simple-secs, .simple-scenes, .simple-pads { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.simple-secs .btn, .simple-scenes .btn, .simple-pads .btn { padding: 18px 8px; font-size: 16px; font-weight: 600; }
+.simple-secs .btn.on { border-color: var(--go-hi); background: #183324; }
+.simple-scenes .btn.on { border-color: var(--sc, var(--accent)); box-shadow: inset 0 0 0 2px var(--sc, var(--accent)); }
+.simple-pads .btn.on { background: #3a2f12; border-color: var(--accent); }
+.simple-row { display: flex; gap: 10px; }
+.simple-row .btn { flex: 1; }
+body[data-role="volunteer"] .badge, body[data-role="volunteer"] #helpBtn { display: none; }

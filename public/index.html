@@ -23,6 +23,7 @@
 <header class="top">
   <div class="brand"><span class="logo"></span><span id="showName">Sanctuary Lights</span></div>
   <nav id="tabs">
+    <button data-tab="simple">Volunteer</button>
     <button data-tab="live" class="on">Live</button>
     <button data-tab="songs">Songs</button>
     <button data-tab="tracks">Tracks</button>
@@ -32,11 +33,19 @@
     <button data-tab="patch">Patch</button>
     <button data-tab="setup">Setup</button>
   </nav>
+  <button id="undoBtn" class="btn small iconbtn" disabled aria-label="Undo">↶</button>
+  <button id="redoBtn" class="btn small iconbtn" disabled aria-label="Redo">↷</button>
+  <button id="roleBadge" class="btn small rolebadge" hidden title="Lock this screen">Admin</button>
   <div id="midiPill" class="midipill" title="MIDI from the tracks">MIDI</div>
   <div id="conn" class="conn" title="Connection to the lighting computer">●</div>
 </header>
 
 <main>
+  <!-- VOLUNTEER -->
+  <section id="tab-simple" class="tab">
+    <div class="panel simple" id="simpleBox"></div>
+  </section>
+
   <!-- LIVE -->
   <section id="tab-live" class="tab on">
     <div class="live-grid">
@@ -449,6 +458,14 @@
           <button class="btn warn" id="newShow">New empty show</button>
           <button class="btn" id="demoShow">Load demo</button>
         </div>
+        <div class="panelhead"><h2>Snapshots</h2><div class="row"><button class="btn small" id="snapSave">Save snapshot</button><button class="btn small" id="snapRefresh">Show list</button></div></div>
+        <p class="hint">The show is saved automatically every few minutes while you change it, and at every start. Restore an earlier version here (you can undo a restore).</p>
+        <div id="snapList"></div>
+        <div class="panelhead"><h2>Access (PINs)</h2></div>
+        <div id="accessBox"></div>
+        <div class="panelhead"><h2>Safety</h2></div>
+        <label class="form" style="display:block">Safe look for the <b>Panic</b> button <select id="safeLook"></select></label>
+        <p class="hint">Panic (hold 1 s) stops strobes, effects and every live change, sets the master to full and fades to this look. Choose your normal worship lighting.</p>
         <div class="panelhead"><h2>DMX monitor</h2><select id="monUniverse"></select></div>
         <div id="dmxMon" class="dmx"></div>
         <div class="panelhead"><h2>Open on iPad / phone</h2></div>
@@ -469,10 +486,20 @@
   <button id="strobeBtn" class="btn hot" title="Hold to strobe everything (key S)">Strobe <kbd>S</kbd></button>
   <button id="flashBtn" class="btn hot" title="Hold for everything at full (key F)">Flash <kbd>F</kbd></button>
   <button id="helpBtn" class="btn small" title="Keyboard shortcuts (?)">?</button>
+  <button id="panicBtn" class="btn panic" title="Hold for 1 second: stop all effects and live changes, go to the safe look">Panic</button>
   <button id="blackout" class="btn bo">Blackout</button>
 </footer>
 
 <div id="toast" class="toast" hidden></div>
+<div id="login" class="login" hidden>
+  <div class="pinpad">
+    <div class="logo big"></div>
+    <h2>Sanctuary Lights</h2>
+    <p id="loginMsg">Enter your PIN</p>
+    <div id="pinDots" class="pindots">—</div>
+    <div class="keys"></div>
+  </div>
+</div>
 <dialog id="padDialog" class="wide">
   <form method="dialog" class="form" id="padForm">
     <h3 id="padDlgTitle">Pad</h3>

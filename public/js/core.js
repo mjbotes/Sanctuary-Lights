@@ -42,10 +42,22 @@ function toast(msg, bad = false) {
   toastTimer = setTimeout(() => (t.hidden = true), bad ? 4000 : 2000);
 }
 
+// ----- login token (when PINs are set) ----------------------------------------
+const TOKEN_KEY = 'slToken';
+function getToken() {
+  try { return localStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
+}
+function setToken(t) {
+  try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch {}
+}
+// Headers for every request to the server (the token says who you are)
+const authHeaders = (extra = {}) => ({ ...extra, 'x-sl-token': getToken() });
+
 async function act(type, payload = {}) {
   try {
-    const r = await fetch('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, ...payload }) });
+    const r = await fetch('/api/action', { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ type, ...payload }) });
     const j = await r.json();
+    if (j.auth) emit('auth', j);
     if (!j.ok) toast(j.error || 'Something went wrong', true);
     return j.ok ? j : false;
   } catch {
@@ -73,7 +85,7 @@ function actThrottled(key, type, payload) {
 }
 
 // Tiny event bus: other modules react to updates from the server.
-const listeners = { state: [], runtime: [], live: [] };
+const listeners = { state: [], runtime: [], live: [], auth: [] };
 function on(event, fn) {
   listeners[event].push(fn);
 }
@@ -88,7 +100,14 @@ function emit(event, data) {
 }
 
 function connect() {
-  const es = new EventSource('/api/events');
+  if (S.es) S.es.close();
+  const es = new EventSource(`/api/events?token=${encodeURIComponent(getToken())}`);
+  S.es = es;
+  es.addEventListener('auth', () => {
+    setToken('');
+    es.close();
+    emit('auth', { reauth: true });
+  });
   es.addEventListener('state', (e) => {
     const d = JSON.parse(e.data);
     S.show = d.show;
@@ -97,6 +116,10 @@ function connect() {
     S.midi = d.midi || S.midi;
     S.ppConn = d.pp || null;
     S.oscConn = d.osc || null;
+    S.role = d.role || 'admin';
+    S.history = d.history || {};
+    S.version = d.version || '';
+    S.update = d.update || null;
     for (const id of [...S.sel]) if (!S.show.fixtures.some((f) => f.id === id)) S.sel.delete(id);
     $('#outErr').textContent = d.outputError || '';
     emit('state', d);
@@ -143,4 +166,4 @@ function ask(title, value = '') {
   });
 }
 
-export { on, emit, $, $$, h, pct, S, toastTimer, toast, act, pending, actThrottled, connect, fixtures, fixById, profOf, selected, selAttrs, progValue, ask };
+export { getToken, setToken, authHeaders, on, emit, $, $$, h, pct, S, toastTimer, toast, act, pending, actThrottled, connect, fixtures, fixById, profOf, selected, selAttrs, progValue, ask };

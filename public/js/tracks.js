@@ -1,6 +1,6 @@
 // Tracks tab: backing tracks, key/tempo, mixer, vocal chain.
 import { AudioEngine } from '../audio/engine.js';
-import { $, $$, S, act, actThrottled, h, selected, toast } from './core.js';
+import { $, $$, S, act, actThrottled, h, selected, toast, authHeaders } from './core.js';
 import { bindFader } from './live.js';
 import { upload } from './view3d.js';
 
@@ -252,7 +252,7 @@ $('#tkFiles').addEventListener('change', async (e) => {
   for (const [i, file] of files.entries()) {
     toast(`Uploading ${i + 1}/${files.length}: ${file.name}`);
     try {
-      const r = await fetch(`/api/upload/audio?name=${encodeURIComponent(file.name)}`, { method: 'POST', body: file });
+      const r = await fetch(`/api/upload/audio?name=${encodeURIComponent(file.name)}`, { method: 'POST', body: file, headers: authHeaders() });
       const j = await r.json();
       if (!j.ok) { toast(j.error, true); continue; }
       await act('stem.add', { songId: song.id, file: j.file, name: file.name });

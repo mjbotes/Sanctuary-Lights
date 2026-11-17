@@ -20,7 +20,12 @@ import './palette.js';
 import './propresenter.js';
 import './screens.js';
 import './view3d.js';
-import { $, S, connect, on } from './core.js';
+import './access.js';
+import './history.js';
+import './simple.js';
+import './safety.js';
+import { $, S, on } from './core.js';
+import { startSession } from './access.js';
 import { renderRuntime } from './live.js';
 import { renderAll } from './render.js';
 import { updateScreenWarn } from './screens.js';
@@ -48,7 +53,7 @@ try {
   const t = localStorage.getItem('tab');
   if (t && $(`#tabs button[data-tab="${t}"]`)) $(`#tabs button[data-tab="${t}"]`).click();
 } catch {}
-connect();
+startSession();
 pollDmx();
 place3d();
 // Re-join as the audio computer after a reload

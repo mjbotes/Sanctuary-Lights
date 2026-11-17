@@ -1,6 +1,6 @@
 // 3D view: creating it, tools, placing lights and models, MVR import.
 import { Stage3D } from '../stage3d.js';
-import { $, $$, S, act, fixById, fixtures, h, selected, toast } from './core.js';
+import { $, $$, S, act, fixById, fixtures, h, selected, toast, authHeaders } from './core.js';
 import { profileOptions } from './patch.js';
 import { resetSlide } from './propresenter.js';
 import { renderScreens } from './screens.js';
@@ -159,7 +159,7 @@ $('#stageSize').addEventListener('change', (e) => {
 async function upload(url, file) {
   toast(`Uploading ${file.name}…`);
   try {
-    const r = await fetch(url, { method: 'POST', body: file });
+    const r = await fetch(url, { method: 'POST', body: file, headers: authHeaders() });
     const j = await r.json();
     if (!j.ok) toast(j.error || 'Upload failed', true);
     return j.ok ? j : null;
