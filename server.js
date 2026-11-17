@@ -10,6 +10,7 @@ const { Engine, demoShow } = require('./lib/engine');
 const { Output } = require('./lib/output');
 const { MidiIn } = require('./lib/midi');
 const { readMvr } = require('./lib/mvr');
+const { ProPresenter } = require('./lib/propresenter');
 
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -103,6 +104,7 @@ function fullState() {
     runtime: engine.runtimeState(),
     outputError: output.lastError,
     midi: midi.status(),
+    pp: propresenter.state,
   };
 }
 function broadcast(event, data) {
@@ -131,6 +133,7 @@ function runAction(action) {
     output.configure(engine.show.settings);
     if (engine.show.settings.fps !== before.fps) startLoop();
     if (engine.show.settings.midiInput !== before.midiInput) midi.configure(engine.show.settings.midiInput);
+    propresenter.configure(engine.show.settings.pp);
   }
   if (!changed.show && !changed.runtime) return;
   saveRuntimeSoon();
@@ -163,6 +166,18 @@ midi.on('beat', (bpm) => {
 });
 midi.on('clockStop', () => runAction({ type: 'tempo.clockStop' }));
 midi.configure(engine.show.settings.midiInput);
+
+// ----- ProPresenter --------------------------------------------------------------
+const propresenter = new ProPresenter(console);
+propresenter.on('slide', (slide) => {
+  try {
+    runAction({ type: 'pp.slide', ...slide });
+  } catch (e) {
+    console.warn('ProPresenter:', e.message);
+  }
+});
+propresenter.on('status', () => broadcast('state', fullState()));
+propresenter.configure(engine.show.settings.pp);
 
 // ----- HTTP ----------------------------------------------------------------
 const MIME = { '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.aac': 'audio/aac', '.flac': 'audio/flac', '.ogg': 'audio/ogg', '.aif': 'audio/aiff', '.aiff': 'audio/aiff', '.caf': 'audio/x-caf',
@@ -280,6 +295,18 @@ const server = http.createServer(async (req, res) => {
         res.end(data);
       });
     }
+    if (url.pathname === '/api/pp/thumb') {
+      const uuid = url.searchParams.get('uuid');
+      const index = Number(url.searchParams.get('index')) || 0;
+      if (!uuid) return json(res, 400, { error: 'uuid needed' });
+      try {
+        const img = await propresenter.thumbnail(uuid, index, Math.min(1280, Number(url.searchParams.get('q')) || 320));
+        res.writeHead(200, { 'Content-Type': img.type, 'Cache-Control': 'max-age=60' });
+        return res.end(img.data);
+      } catch (e) {
+        return json(res, 502, { error: e.message });
+      }
+    }
     if (url.pathname === '/api/dmx') {
       const u = Number(url.searchParams.get('u')) || 1;
       const data = lastUniverses.get(u);
@@ -335,6 +362,7 @@ function shutdown() {
   } catch {}
   output.close();
   midi.close();
+  propresenter.close();
   process.exit(0);
 }
 module.exports.shutdown = () => {
@@ -344,6 +372,7 @@ module.exports.shutdown = () => {
   } catch {}
   output.close();
   midi.close();
+  propresenter.close();
 };
 if (!process.env.SL_EMBEDDED) {
   process.on('SIGINT', shutdown);

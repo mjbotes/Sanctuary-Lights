@@ -25,7 +25,7 @@ Download the installer from the repository's **Releases** page (or from the late
 | Windows | `Sanctuary-Lights-…-win-x64.exe` |
 | Linux | `Sanctuary-Lights-…-linux-x86_64.AppImage` |
 
-On a Mac, open the `.dmg` and drag **Sanctuary Lights** to Applications.
+On a Mac, open the `.dmg` and drag **Sanctuary Lights** to Applications. It's a normal Mac app: it appears in the Dock, keeps running in the background without slowing down audio or lighting timing, and has its own menu (View → Toggle Full Screen).
 
 - **First launch:** unless the build was signed with an Apple Developer certificate (see below), macOS blocks the app. Try to open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
 - **Permissions:** allow the microphone (for vocals) and the local network (for Art-Net/sACN and iPads) when asked.
@@ -164,7 +164,8 @@ The **Selection tricks** panel on the FX & Presets tab changes how the current s
 
 | Control | What it does |
 |---|---|
-| **Sort** | Tap order, or by stage position: left→right, right→left, front→back, back→front, centre→out, outside→in |
+| **Sort** | Tap order, or by stage position: left→right, right→left, front→back, back→front, low→high, high→low, centre→out, outside→in, or **3D direction**: any angle. **Turn** rotates around the vertical (0° = left→right, 90° = front→back, 45° = diagonal). **Tilt** angles it upwards (90° = floor→ceiling). Tap the dial to point it. Positions come from the 3D layout. |
+| **Spread by distance** | Spreads by each light's real position along the sort direction instead of its place in the order, so unevenly spaced lights get uneven timing, like a real wave moving through the room |
 | **Shift** | Rotates the order (e.g. start the chase on light 3) |
 | **Shuffle** | Random but repeatable order; **Unshuffle** goes back |
 | **Block** | That many lights in a row share one step |
@@ -176,6 +177,37 @@ The **Selection tricks** panel on the FX & Presets tab changes how the current s
 | **Spread a value now** | Sets intensity, pan, tilt or zoom from X% to Y% across the lights, following the order and pattern above |
 
 The selection list shows each light's order number, its step and its delay. Lights outside the active part are dimmed. **Tricks on/off** pauses all of it without losing the settings, and **Reset** clears everything. Effects keep the tricks they were started with, including when they're saved into a cue or look.
+
+## ProPresenter
+
+Sanctuary Lights follows ProPresenter 7 (version 7.9 or later) over the network:
+
+- **Slide groups drive the lights:** when the operator clicks a slide in a group called *Verse 1*, *Chorus* or *Bridge*, the lights go to that section of the song. *Verse 1* matches a section called *Verse* or *Verse 1*. Manual mode and Hold are respected, as with MIDI and the tracks.
+- **Presentations pick songs:** a presentation with the same name as a song selects that song. If there's no matching song, a **look** with the group's name is used (e.g. a look called *Chorus*).
+- **Make song from this presentation** (in Setup, while a presentation is live) creates the song with one section per group, linked to looks with matching names.
+- **Colour sync** sets the live colour of the light groups you tick:
+  - **ProPresenter group colour:** the colour each group has in ProPresenter.
+  - **Colour of the slide on screen:** the strongest colour in the current slide image (text and greys are ignored; a black-and-white slide gives open white).
+- **The live slide appears on the screens** in the 3D view.
+
+**Setup:**
+
+1. In ProPresenter, go to **Settings → Network** and tick **Enable Network**. Note the port.
+2. In Sanctuary Lights, go to **Setup → ProPresenter**, tick *Follow ProPresenter*, and enter the address of the computer running ProPresenter (`localhost` if it's the same Mac) and the port.
+
+The status line shows the connection and what the last slide did. Only group names and slide images are read; slide text is not used.
+
+## Screens and LED walls in the 3D model
+
+In **Patch → 3D stage & rig → Screens & LED walls**, add your projector screens and LED walls. For each one:
+
+- Set its position (centre), size, turn and tilt, or tap **Move** / the screen in the 3D view and drag it.
+- **Show slides** shows the live ProPresenter slide on it.
+- **Keep light off it** checks every light, every frame, including moving heads during effects. Lights whose beam would land on the screen turn **red** in the 3D view and are listed under the screens. **Setup → Lights pointing at screens**:
+  - **Warn** (default): show them only.
+  - **Block:** switch them off while they point at a screen. A moving head comes back on as soon as its movement takes it off the screen.
+
+The check uses each light's 3D position, aim, beam angle (zoom for moving heads) and pan/tilt, so place and aim your lights in 3D for it to be accurate. Front lights aimed at head height often spill onto an upstage LED wall. Fixing that is a real focusing job: aim lower, use a narrower beam, or block them here.
 
 ## Running it live
 
@@ -327,6 +359,8 @@ Code layout:
 - `lib/profiles.js`: fixture types
 - `lib/midi.js`: MIDI input and clock (CoreMIDI, through the optional `@julusian/midi` module)
 - `lib/mvr.js`: MVR (zip + XML) reader
+- `lib/propresenter.js`: ProPresenter network API client
+- `public/geom.js`: stage geometry (positions, beam directions, screen hits), shared by the server and the 3D view
 - `public/audio/`: tracks engine
   - `engine.js`: playback, routing, vocal chain
   - `pvcore.js`: key/tempo change (phase vocoder)

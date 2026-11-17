@@ -79,6 +79,7 @@ function connect() {
     S.profiles = Object.fromEntries(d.profiles.map((p) => [p.id, p]));
     S.runtime = d.runtime;
     S.midi = d.midi || S.midi;
+    S.ppConn = d.pp || null;
     for (const id of [...S.sel]) if (!S.show.fixtures.some((f) => f.id === id)) S.sel.delete(id);
     renderAll();
     $('#outErr').textContent = d.outputError || '';
@@ -92,6 +93,7 @@ function connect() {
     S.live = JSON.parse(e.data);
     renderLive();
     if (stage3d) stage3d.setLive(S.live.fixtures);
+    updateScreenWarn();
   });
   es.onopen = () => $('#conn').classList.remove('off');
   es.onerror = () => $('#conn').classList.add('off');
@@ -163,6 +165,7 @@ function renderAll() {
   renderFx();
   renderTracks();
   renderSetup3d();
+  renderScreens();
   renderRuntime();
   renderControls();
   renderLive();
@@ -327,6 +330,8 @@ function renderRuntime() {
   updateFxLive();
   if (S.tab === 'fx') renderFxSel();
   tracksRuntime();
+  renderPpStatus();
+  ppSlideChanged();
 }
 $('#goBtn').onclick = () => act('cue.go');
 $('#backBtn').onclick = () => act('cue.back');
@@ -645,6 +650,23 @@ function renderSettings() {
   f.enttecUniverse.value = s.enttecUniverse || 1;
   f.fps.value = s.fps;
   f.noteBase.value = s.noteBase ?? 36;
+  const pp = s.pp || {};
+  f.ppEnabled.checked = !!pp.enabled;
+  f.ppHost.value = pp.host || '';
+  f.ppPort.value = pp.port || 1025;
+  f.ppSections.checked = pp.sections !== false;
+  f.ppSongs.checked = pp.songs !== false;
+  f.ppColorMode.value = pp.colorMode || 'off';
+  f.screenProtect.value = s.screenProtect || 'warn';
+  $('#ppColorGroups').replaceChildren(...S.show.groups.map((g) => {
+    const on = (pp.colorGroups || []).includes(g.id);
+    return h('button', { type: 'button', className: `chip${on ? ' on' : ''}`, style: on ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}, onclick: () => {
+      const list = new Set(pp.colorGroups || []);
+      on ? list.delete(g.id) : list.add(g.id);
+      act('settings.update', { settings: { pp: { colorGroups: [...list] } } });
+    } }, `${on ? '✓ ' : ''}${g.name}`);
+  }));
+  renderPpStatus();
   f.pcSelectsSong.checked = s.pcSelectsSong !== false;
   renderIfaces();
   renderMidiSettings();
@@ -678,6 +700,8 @@ $('#setForm').addEventListener('submit', async (e) => {
     artnet: f.artnet.checked, artnetTarget: f.artnetTarget.value, artnetBase: Number(f.artnetBase.value),
     sacn: f.sacn.checked, sacnInterface: f.sacnInterface.value, sacnUnicast: f.sacnUnicast.value, sacnPriority: f.sacnPriority.value,
     enttec: f.enttec.checked, enttecPort: f.enttecPort.value, enttecUniverse: f.enttecUniverse.value, fps: f.fps.value,
+    pp: { enabled: f.ppEnabled.checked, host: f.ppHost.value, port: f.ppPort.value, sections: f.ppSections.checked, songs: f.ppSongs.checked, colorMode: f.ppColorMode.value },
+    screenProtect: f.screenProtect.value,
     midiInput: f.midiInput.value, midiOutput: f.midiOutput.value, midiChannel: f.midiChannel.value, noteBase: f.noteBase.value, pcSelectsSong: f.pcSelectsSong.checked,
   };
   if (await act('settings.update', { settings, name: f.name.value })) toast('Settings saved');
@@ -1276,7 +1300,7 @@ function renderFxSel() {
     const v = view.get(f.id);
     const sub = v && tricksOn() ? [
       `step ${v.k + 1}`,
-      timed ? ` · ${(FXM.spread(t.delayFrom, t.delayTo, v.k, v.m, false) ?? 0).toFixed(1)}s` : '',
+      timed ? ` · ${(v.f !== undefined ? (FXM.hasValue(t.delayFrom) || FXM.hasValue(t.delayTo) ? (Number(FXM.hasValue(t.delayFrom) ? t.delayFrom : t.delayTo) + (Number(FXM.hasValue(t.delayTo) ? t.delayTo : t.delayFrom) - Number(FXM.hasValue(t.delayFrom) ? t.delayFrom : t.delayTo)) * v.f) : 0) : FXM.spread(t.delayFrom, t.delayTo, v.k, v.m, false) ?? 0).toFixed(1)}s` : '',
     ].join('') : '';
     return h('button', { className: `selchip${v ? ' on' : ''}${v && !v.active ? ' idle' : ''}`, title: v && !v.active ? 'Not in the active part' : '', onclick: () => toggleSel(f.id) },
       v ? h('i', {}, v.i + 1) : null, f.name, sub ? h('small', {}, sub) : null);
@@ -1947,9 +1971,36 @@ function tricksOn() {
 }
 function trickPosClient(id) {
   const f = fixById(id);
-  if (!f) return { x: 0, z: 0 };
-  return f.pos3d ? { x: f.pos3d.x, z: f.pos3d.z } : { x: f.x - 0.5, z: f.y };
+  if (!f) return { x: 0, y: 0, z: 0 };
+  return window.Geom.placement(f, S.show.stage3d.stage).pos;
 }
+// Small top-down dial showing the sweep direction (drag or tap to turn)
+function dirDial(t) {
+  const c = h('canvas', { width: 120, height: 120, className: 'dirdial', title: 'Tap to point the sweep (top = back of the stage)' });
+  const draw = () => {
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, 120, 120);
+    g.strokeStyle = '#3d4556'; g.lineWidth = 2;
+    g.beginPath(); g.arc(60, 60, 50, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#8b93a5'; g.font = '10px sans-serif'; g.textAlign = 'center';
+    g.fillText('BACK', 60, 18); g.fillText('AUDIENCE', 60, 110);
+    const a = ((Number(t.turn) || 0) * Math.PI) / 180;
+    const len = 40 * Math.cos(((Number(t.tilt) || 0) * Math.PI) / 180);
+    const x = 60 + Math.cos(a) * len, y = 60 - Math.sin(a) * len;
+    g.strokeStyle = '#f2b33d'; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(60 - (x - 60), 60 - (y - 60)); g.lineTo(x, y); g.stroke();
+    g.fillStyle = '#f2b33d'; g.beginPath(); g.arc(x, y, 6, 0, Math.PI * 2); g.fill();
+  };
+  draw();
+  c.addEventListener('pointerdown', (e) => {
+    const r = c.getBoundingClientRect();
+    const dx = (e.clientX - r.left) / r.width * 120 - 60, dy = 60 - (e.clientY - r.top) / r.height * 120;
+    const turn = Math.round(((Math.atan2(dy, dx) * 180) / Math.PI) / 15) * 15;
+    setTricks({ turn });
+  });
+  return c;
+}
+
 // The selection after tricks: [{ id, i (order), k (step), m (steps), active }]
 function trickView() {
   const ids = [...S.sel];
@@ -1958,7 +2009,8 @@ function trickView() {
   const ord = FXM.trickOrder(ids, t, trickPosClient);
   const steps = FXM.trickSteps(ord.length, t);
   const act = FXM.trickActive(ord.length, t);
-  return ord.map((id, i) => ({ id, i, ...steps[i], active: act.active(i) }));
+  const fr = FXM.trickFractions(ord, t, trickPosClient);
+  return ord.map((id, i) => ({ id, i, ...steps[i], ...(fr ? { f: fr[i] } : {}), active: act.active(i) }));
 }
 // Lights that programming applies to: the active part of the selection, in trick order.
 function effSel() {
@@ -1990,7 +2042,7 @@ function renderTricks() {
   const view = trickView();
   const parts = FXM.hasValue(t.width) ? Math.ceil(Math.max(1, view.length) / t.width) : 0;
   const order = h('select', { onchange: (e) => setTricks({ order: e.target.value }) },
-    ...[['tap', 'Tap order'], ['left-right', 'Left → right'], ['right-left', 'Right → left'], ['front-back', 'Front → back'], ['back-front', 'Back → front'], ['centre-out', 'Centre → out'], ['outside-in', 'Outside → in']]
+    ...[['tap', 'Tap order'], ['left-right', 'Left → right'], ['right-left', 'Right → left'], ['front-back', 'Front → back'], ['back-front', 'Back → front'], ['low-high', 'Low → high'], ['high-low', 'High → low'], ['centre-out', 'Centre → out'], ['outside-in', 'Outside → in'], ['direction', '3D direction (turn / tilt)…']]
       .map(([v, l]) => h('option', { value: v, selected: (t.order || 'tap') === v }, l)));
   const pair = (label, kf, kt, opts) => h('div', { className: 'pairrow' }, h('span', {}, label), stepper(kf, 'From', opts), h('span', { className: 'arrow' }, '→'), stepper(kt, 'To', opts));
   const fanAttr = h('select', {}, ...[['dim', 'Intensity'], ['pan', 'Pan'], ['tilt', 'Tilt'], ['zoom', 'Zoom']].map(([v, l]) => h('option', { value: v }, l)));
@@ -2004,7 +2056,14 @@ function renderTricks() {
       h('button', { className: 'btn small warn', onclick: () => act('tricks.reset') }, 'Reset')),
     h('div', { className: `tr-body${on ? '' : ' off'}` },
       h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Order'),
-        h('div', { className: 'tr-grid' }, h('label', { className: 'st-label tr-sel' }, 'Sort', order), stepper('shift', 'Shift', { start: 0 }))),
+        h('div', { className: 'tr-grid' }, h('label', { className: 'st-label tr-sel' }, 'Sort', order), stepper('shift', 'Shift', { start: 0 })),
+        t.order === 'direction' ? h('div', { className: 'tr-grid', style: { marginTop: '6px' } },
+          stepper('turn', 'Turn ° (0 = L→R, 90 = front→back)', { step: 15, start: 0 }),
+          stepper('tilt', 'Tilt ° (90 = floor→ceiling)', { step: 15, start: 0 }),
+          h('div', { className: 'stepper' }, h('span', { className: 'st-label' }, 'Direction'), dirDial(t))) : null,
+        t.order && t.order !== 'tap' ? h('label', { className: 'check plain', style: { marginTop: '6px', display: 'flex', gap: '6px', alignItems: 'center', fontSize: '13px' } },
+          h('input', { type: 'checkbox', checked: !!t.spatial, onchange: (e) => setTricks({ spatial: e.target.checked }) }),
+          'Spread by distance (uneven spacing = uneven timing, like a real wave)') : null),
       h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Pattern'),
         h('div', { className: 'tr-grid' }, stepper('block', 'Block', { min: 2, start: 1 }), stepper('groups', 'Groups', { min: 2, start: 1 }), stepper('wings', 'Wings', { min: 2, start: 1 }))),
       h('div', { className: 'tr-sec' }, h('div', { className: 'label' }, 'Parts'),
@@ -2029,6 +2088,114 @@ function renderTricks() {
     h('p', { className: 'hint' }, 'Tricks work on the current selection. Phase and Speed shape effects you run on it. Fade and Delay are saved into the next cue or look you record, so the lights change one after another. Width splits the selection into parts: programming then goes to the active part only.'));
 }
 
+// ----- ProPresenter ---------------------------------------------------------------
+function renderPpStatus() {
+  const el = $('#ppStatus');
+  if (!el || !S.show) return;
+  const pp = S.show.settings.pp || {};
+  const c = S.ppConn;
+  const live = S.runtime.pp;
+  if (!pp.enabled) { el.textContent = 'Off.'; return; }
+  el.replaceChildren(
+    c && c.connected ? h('span', { style: { color: 'var(--go-hi)' } }, '● Connected') : h('span', { style: { color: '#ff8a80' } }, `● Not connected${c && c.error ? `: ${c.error}` : ''}`),
+    live && live.presentation ? ` · ${live.presentation.name}${live.group ? ` · ${live.group}` : ''}${live.result ? ` → ${live.result}` : ''}` : '',
+    live && live.presentation ? h('button', { type: 'button', className: 'btn small', style: { marginLeft: '8px' }, title: 'Make a song with this name and one section per group', onclick: () => act('pp.importSong').then((r) => r && toast(`Song "${live.presentation.name}" ready. Pick looks for its sections on the Songs tab.`)) }, 'Make song from this presentation') : null);
+}
+
+// The live slide image: shown on the 3D screens, and (if chosen) its colour is sent to the lights.
+// Only the desktop app window or the audio computer does the colour maths, so it happens once.
+const isColorWorker = () => /[?&]app=1/.test(location.search) || isHost() || lsGet('ppColorWorker') === '1';
+let lastSlideKey = '';
+function ppSlideChanged() {
+  const live = S.runtime.pp;
+  const pp = S.show && S.show.settings.pp;
+  if (!live || !live.presentation || !live.presentation.uuid || !pp || !pp.enabled) {
+    if (stage3d) stage3d.setSlide(null);
+    return;
+  }
+  const key = `${live.presentation.uuid}|${live.index}`;
+  if (key === lastSlideKey) return;
+  lastSlideKey = key;
+  const url = `/api/pp/thumb?uuid=${encodeURIComponent(live.presentation.uuid)}&index=${live.index}&q=480`;
+  if (stage3d) stage3d.setSlide(url);
+  if (pp.colorMode === 'slide' && isColorWorker()) slideColor(url).then((rgb) => rgb && act('pp.color', { rgb, key })).catch(() => {});
+}
+// Strong colours count more than greys, black and white (text on a dark background stays out of it).
+function slideColor(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = 48; c.height = 27;
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0, 48, 27);
+      const d = g.getImageData(0, 0, 48, 27).data;
+      let r = 0, gr = 0, b = 0, wsum = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        const R = d[i] / 255, G = d[i + 1] / 255, B = d[i + 2] / 255;
+        const mx = Math.max(R, G, B), mn = Math.min(R, G, B);
+        const sat = mx ? (mx - mn) / mx : 0;
+        const w = sat * sat * mx + 0.002;
+        r += R * w; gr += G * w; b += B * w; wsum += w;
+      }
+      let rgb = [r / wsum, gr / wsum, b / wsum];
+      const mx = Math.max(...rgb);
+      const mn = Math.min(...rgb);
+      if (mx < 0.08 || (mx - mn) / mx < 0.12) return resolve([1, 1, 1]); // no real colour on screen: open white
+      rgb = rgb.map((v) => v / mx); // full brightness, keep the hue
+      resolve(rgb.map((v) => Math.round(v * 1000) / 1000));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// ----- screens in the 3D setup ----------------------------------------------------
+S.screenSel = null;
+function renderScreens() {
+  const st = S.show.stage3d;
+  const list = st.screens || [];
+  const box = $('#screenList');
+  if (!box || (box.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) return;
+  const update = (id, patch) => act('stage3d.set', { screens: list.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+  box.replaceChildren(...list.map((sc) => {
+    const num = (k, label, step = 0.1) => {
+      const i = h('input', { type: 'number', step, value: Math.round((sc[k] || 0) * 100) / 100 });
+      i.addEventListener('change', () => update(sc.id, { [k]: Number(i.value) }));
+      return h('label', { className: 'mini3' }, label, i);
+    };
+    return h('div', { className: `modelrow${S.screenSel === sc.id ? ' selscreen' : ''}` },
+      h('div', { className: 'row' },
+        h('input', { className: 'nm', value: sc.name, style: { flex: 1 }, onchange: (e) => update(sc.id, { name: e.target.value }) }),
+        h('button', { className: 'btn small', onclick: () => { S.screenSel = S.screenSel === sc.id ? null : sc.id; stage3d && stage3d.selectScreen(S.screenSel); renderScreens(); } }, S.screenSel === sc.id ? 'Done' : 'Move'),
+        h('button', { className: 'btn small warn', onclick: () => act('stage3d.set', { screens: list.filter((x) => x.id !== sc.id) }) }, '✕')),
+      h('div', { className: 'row' }, num('x', 'Left/right'), num('y', 'Height (centre)'), num('z', 'Front/back')),
+      h('div', { className: 'row' }, num('w', 'Width m'), num('h', 'Height m'), num('rotY', 'Turn °', 5), num('rotX', 'Tilt °', 5)),
+      h('div', { className: 'row' },
+        h('label', { className: 'check plain', style: { display: 'flex', gap: '6px', alignItems: 'center', fontSize: '12px' } }, h('input', { type: 'checkbox', checked: sc.protect !== false, onchange: (e) => update(sc.id, { protect: e.target.checked }) }), 'Keep light off it'),
+        h('label', { className: 'check plain', style: { display: 'flex', gap: '6px', alignItems: 'center', fontSize: '12px' } }, h('input', { type: 'checkbox', checked: sc.slides !== false, onchange: (e) => update(sc.id, { slides: e.target.checked }) }), 'Show slides')));
+  }));
+}
+function addScreen(kind) {
+  const st = S.show.stage3d;
+  const back = -st.stage.d + 0.05;
+  const list = st.screens || [];
+  const side = list.length % 2 ? 1 : -1;
+  const sc = kind === 'led'
+    ? { name: `LED wall ${list.length + 1}`, kind: 'led', x: 0, y: Math.round((st.stage.h + 2.2) * 100) / 100, z: Math.round(back * 100) / 100, w: 6, h: 3.375 }
+    : { name: `Screen ${list.length + 1}`, kind: 'projector', x: list.length ? side * (st.stage.w / 2 + 1.5) : 0, y: 3.5, z: list.length ? -st.stage.d / 2 : back, w: 4, h: 2.25, rotY: list.length ? -side * 20 : 0 };
+  act('stage3d.set', { screens: [...list, sc] });
+}
+$('#addScreen').onclick = () => addScreen('projector');
+$('#addLed').onclick = () => addScreen('led');
+function updateScreenWarn() {
+  const el = $('#screenWarn');
+  if (!el || !S.show) return;
+  const hit = Object.entries(S.live.fixtures || {}).filter(([, l]) => l.x).map(([id]) => (fixById(id) || {}).name).filter(Boolean);
+  const mode = S.show.settings.screenProtect || 'warn';
+  el.textContent = hit.length && mode !== 'off' ? `${mode === 'block' ? 'Switched off' : 'Shining on a screen'}: ${hit.join(', ')}` : '';
+}
+
 // ----- 3D -----------------------------------------------------------------------
 let stage3d = null;
 let no3d = null;
@@ -2041,6 +2208,7 @@ function get3d() {
     stage3d.onSelect = (id, add) => {
       if (S.tab === 'patch') {
         S.patchSel = id;
+        if (id && S.screenSel) { S.screenSel = null; stage3d.selectScreen(null); renderScreens(); }
         stage3d.setSelection(id ? [id] : []);
         renderSel3d();
       } else if (S.tab === 'program' && id) {
@@ -2049,9 +2217,13 @@ function get3d() {
     };
     stage3d.onMove = (id, pos) => act('fixture.edit', { id, pos3d: pos }).then(renderSel3d);
     stage3d.onError = (m) => toast(m, true);
+    stage3d.onSelectScreen = (id) => { S.screenSel = id; stage3d.selectScreen(id); renderScreens(); };
+    stage3d.onMoveScreen = (id, p) => act('stage3d.set', { screens: S.show.stage3d.screens.map((x) => (x.id === id ? { ...x, x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2) } : x)) });
     if (S.show) {
       stage3d.setShow(S.show, S.profiles);
       stage3d.setLive(S.live.fixtures);
+      lastSlideKey = '';
+      ppSlideChanged();
     }
   } catch (e) {
     console.error(e);

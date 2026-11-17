@@ -142,18 +142,29 @@
     return out;
   }
 
-  // Put the lights in trick order. posOf(id) -> { x, z } stage position (x left/right, z front/back).
+  // Sorting key for a stage position { x, y, z } (metres; z grows towards the audience).
+  // 'direction' sorts along any 3D direction: turn (degrees around vertical, 0 = left -> right,
+  // 90 = front -> back) and tilt (degrees up; 90 = floor -> ceiling).
+  function sortKey(t) {
+    const o = t && t.order;
+    if (o === 'direction') {
+      const tr = (Number(t.turn) || 0) * Math.PI / 180, el = (Number(t.tilt) || 0) * Math.PI / 180;
+      const d = { x: Math.cos(el) * Math.cos(tr), y: Math.sin(el), z: -Math.cos(el) * Math.sin(tr) };
+      return (p) => p.x * d.x + (p.y || 0) * d.y + p.z * d.z;
+    }
+    return {
+      'left-right': (p) => p.x, 'right-left': (p) => -p.x,
+      'back-front': (p) => p.z, 'front-back': (p) => -p.z,
+      'low-high': (p) => p.y || 0, 'high-low': (p) => -(p.y || 0),
+      'centre-out': (p) => Math.hypot(p.x, p.z), 'outside-in': (p) => -Math.hypot(p.x, p.z),
+    }[o] || null;
+  }
+
+  // Put the lights in trick order. posOf(id) -> { x, y, z } stage position.
   function trickOrder(ids, t, posOf) {
     let list = ids.slice();
-    const o = t && t.order;
-    if (o && o !== 'tap' && posOf) {
-      const key = {
-        'left-right': (p) => p.x, 'right-left': (p) => -p.x,
-        'back-front': (p) => p.z, 'front-back': (p) => -p.z,
-        'centre-out': (p) => Math.hypot(p.x, p.z), 'outside-in': (p) => -Math.hypot(p.x, p.z),
-      }[o];
-      if (key) list = list.map((id, i) => ({ id, i, k: key(posOf(id) || { x: 0, z: 0 }) })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.id);
-    }
+    const key = posOf ? sortKey(t) : null;
+    if (key) list = list.map((id, i) => ({ id, i, k: key(posOf(id) || { x: 0, y: 0, z: 0 }) })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.id);
     if (t && Number(t.shuffle) > 0) list = shuffled(list, Number(t.shuffle));
     const sh = t && has(t.shift) ? Math.round(Number(t.shift)) : 0;
     if (sh && list.length) {
@@ -206,7 +217,16 @@
     return a + (b - a) * spreadPos(k, m, full);
   }
 
-  const api = { trickOrder, trickSteps, trickActive, spread, spreadPos, hasValue: has, wave, phaseOf, cyclesAt, evaluate, hsvToRgb, hexToRgb, clamp01, WAVES, ATTRS, BUILTIN };
+  // "By distance": each light's real position along the sort direction, 0..1 (instead of its rank).
+  function trickFractions(ids, t, posOf) {
+    const key = posOf ? sortKey(t) : null;
+    if (!key || !t.spatial) return null;
+    const v = ids.map((id) => key(posOf(id) || { x: 0, y: 0, z: 0 }));
+    const lo = Math.min(...v), hi = Math.max(...v);
+    return v.map((x) => (hi - lo > 1e-6 ? (x - lo) / (hi - lo) : 0));
+  }
+
+  const api = { trickOrder, trickFractions, sortKey, trickSteps, trickActive, spread, spreadPos, hasValue: has, wave, phaseOf, cyclesAt, evaluate, hsvToRgb, hexToRgb, clamp01, WAVES, ATTRS, BUILTIN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.FXMath = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

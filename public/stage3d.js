@@ -7,6 +7,7 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { TDSLoader } from 'three/addons/loaders/TDSLoader.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
+const Geom = window.Geom;
 const Z = new THREE.Vector3(0, 0, 1);
 const MAX_SPOTS = 24;
 
@@ -68,7 +69,10 @@ export class Stage3D {
     this.stageGroup = new THREE.Group();
     this.modelGroup = new THREE.Group();
     this.fixtureGroup = new THREE.Group();
-    this.scene.add(this.stageGroup, this.modelGroup, this.fixtureGroup);
+    this.screenGroup = new THREE.Group();
+    this.scene.add(this.stageGroup, this.modelGroup, this.fixtureGroup, this.screenGroup);
+    this.screens = new Map();
+    this.slideTexture = null;
 
     this.spots = [];
     for (let i = 0; i < MAX_SPOTS; i++) {
@@ -83,12 +87,13 @@ export class Stage3D {
     this.transform.addEventListener('dragging-changed', (e) => {
       this.controls.enabled = !e.value;
       if (!e.value && this.transform.object) {
-        const f = this.transform.object.userData.fx;
-        const p = this.transform.object.position;
-        this.onMove && this.onMove(f.id, { x: p.x, y: p.y, z: p.z });
+        const o = this.transform.object;
+        const p = o.position;
+        if (o.userData.screen) this.onMoveScreen && this.onMoveScreen(o.userData.screen.id, { x: p.x, y: p.y, z: p.z });
+        else this.onMove && this.onMove(o.userData.fx.id, { x: p.x, y: p.y, z: p.z });
       }
     });
-    this.transform.addEventListener('objectChange', () => this.transform.object && this.updateFixture(this.transform.object.userData.fx.id));
+    this.transform.addEventListener('objectChange', () => this.transform.object && this.transform.object.userData.fx && this.updateFixture(this.transform.object.userData.fx.id));
     this.scene.add(this.transform.getHelper ? this.transform.getHelper() : this.transform);
 
     this.fixtures = new Map(); // id -> { group, body, lens, beam, fx, prof, dir0, live }
@@ -182,23 +187,72 @@ export class Stage3D {
       this.stage = st.stage;
       this.buildStage(st);
     }
-    const fxKey = JSON.stringify(show.fixtures.map((f) => [f.id, f.profile, f.pos3d, f.aim, f.beam, f.x, f.y]));
+    const fxKey = JSON.stringify([show.fixtures.map((f) => [f.id, f.profile, f.pos3d, f.aim, f.beam, f.x, f.y]), st.stage]);
     if (fxKey !== this.fxKey) {
       this.fxKey = fxKey;
       this.buildFixtures(show.fixtures);
     }
+    const scKey = JSON.stringify(st.screens || []);
+    if (scKey !== this.scKey) {
+      this.scKey = scKey;
+      this.buildScreens(st.screens || []);
+    }
   }
 
   defaultPos(f) {
-    const st = this.stage;
-    const x = (f.x - 0.5) * st.w * 1.1;
-    const z = -st.d + f.y * (st.d + 6);
-    return { x, y: 6, z };
+    return Geom.defaultPos(f, this.stage);
   }
   defaultAim(f, pos) {
-    const st = this.stage;
-    if (pos.z > 0) return { x: pos.x * 0.6, y: st.h + 1.5, z: -st.d / 2 };
-    return { x: pos.x, y: st.h, z: pos.z };
+    return Geom.defaultAim(f, pos, this.stage);
+  }
+
+  // ----- screens / LED walls ----------------------------------------------------------
+  buildScreens(list) {
+    if (this.transform.object && this.transform.object.userData.screen) this.transform.detach();
+    this.screenGroup.clear();
+    this.screens.clear();
+    for (const sc of list) {
+      const holder = new THREE.Group();
+      holder.position.set(sc.x, sc.y, sc.z);
+      holder.rotation.set(THREE.MathUtils.degToRad(sc.rotX || 0), THREE.MathUtils.degToRad(sc.rotY || 0), 0, 'YXZ');
+      holder.userData.screen = sc;
+      const mat = new THREE.MeshBasicMaterial({ color: sc.kind === 'led' ? 0x0c1020 : 0x1a1d24, side: THREE.DoubleSide });
+      const surface = new THREE.Mesh(new THREE.PlaneGeometry(sc.w, sc.h), mat);
+      surface.userData.screenId = sc.id;
+      surface.renderOrder = 1;
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(sc.w, sc.h)), new THREE.LineBasicMaterial({ color: sc.protect !== false ? 0xd9534f : 0x4b5568 }));
+      edge.position.z = 0.01;
+      holder.add(surface, edge);
+      this.screenGroup.add(holder);
+      this.screens.set(sc.id, { holder, surface, sc });
+    }
+    this.applySlide();
+    this.applySelection();
+  }
+
+  // Show the live ProPresenter slide on the screens (url null = blank).
+  setSlide(url) {
+    if (url === this.slideUrl) return;
+    this.slideUrl = url;
+    if (!url) {
+      this.slideTexture = null;
+      return this.applySlide();
+    }
+    new THREE.TextureLoader().load(url, (tex) => {
+      if (this.slideUrl !== url) return tex.dispose();
+      tex.colorSpace = THREE.SRGBColorSpace;
+      if (this.slideTexture) this.slideTexture.dispose();
+      this.slideTexture = tex;
+      this.applySlide();
+    }, undefined, () => {});
+  }
+  applySlide() {
+    for (const { surface, sc } of this.screens.values()) {
+      const m = surface.material;
+      m.map = sc.slides !== false ? this.slideTexture : null;
+      m.color.setHex(m.map ? 0xffffff : sc.kind === 'led' ? 0x0c1020 : 0x1a1d24);
+      m.needsUpdate = true;
+    }
   }
 
   buildStage(st) {
@@ -318,21 +372,20 @@ export class Stage3D {
     for (const [id, l] of Object.entries(live || {})) {
       const f = this.fixtures.get(id);
       if (!f) continue;
+      const wasBlocked = !!f.live.x;
       f.live = { ...f.live, ...l };
+      if (!l.x) delete f.live.x;
       this.updateFixture(id);
+      if (wasBlocked !== !!f.live.x && !this.selection.has(id)) f.body.material.emissive.setHex(f.live.x ? 0x8a1c1c : 0x000000);
     }
     this.assignSpots();
   }
 
+  // Same maths as the server (public/geom.js), so screen warnings match what you see.
   direction(f) {
-    const d0 = f.aimPoint.clone().sub(f.group.position).normalize();
-    if (!f.mover) return d0;
-    const pan = ((f.live.p ?? 0.5) - 0.5) * THREE.MathUtils.degToRad(540);
-    const tilt = ((f.live.t ?? 0.5) - 0.5) * THREE.MathUtils.degToRad(270);
-    let right = new THREE.Vector3().crossVectors(d0, UP);
-    if (right.lengthSq() < 1e-6) right.set(1, 0, 0);
-    right.normalize();
-    return d0.applyAxisAngle(right, tilt).applyAxisAngle(UP, pan).normalize();
+    const p = f.group.position;
+    const d = Geom.beamDir({ x: p.x, y: p.y, z: p.z }, { x: f.aimPoint.x, y: f.aimPoint.y, z: f.aimPoint.z }, f.mover, f.live.p ?? 0.5, f.live.t ?? 0.5);
+    return new THREE.Vector3(d.x, d.y, d.z);
   }
 
   updateFixture(id) {
@@ -357,6 +410,7 @@ export class Stage3D {
     f.beam.visible = lit > 0.01;
     f.beam.material.uniforms.color.value.copy(lit > 0 ? color.multiplyScalar(1 / lit) : color);
     f.beam.material.uniforms.strength.value = lit * this.haze * 0.55;
+    if (f.live.x) f.beam.material.uniforms.color.value.lerp(new THREE.Color(1, 0, 0), 0.6);
     f.len = len;
     f.lit = lit;
   }
@@ -385,12 +439,19 @@ export class Stage3D {
     this.applySelection();
   }
   applySelection() {
-    for (const [id, f] of this.fixtures) f.body.material.emissive.setHex(this.selection.has(id) ? 0x1d5fbf : 0x000000);
+    for (const [id, f] of this.fixtures) f.body.material.emissive.setHex(this.selection.has(id) ? 0x1d5fbf : f.live.x ? 0x8a1c1c : 0x000000);
     if (this.mode === 'edit') {
+      const scr = this.selectedScreen && this.screens.get(this.selectedScreen);
       const only = this.selection.size === 1 ? this.fixtures.get([...this.selection][0]) : null;
-      if (only) this.transform.attach(only.group);
+      if (scr) this.transform.attach(scr.holder);
+      else if (only) this.transform.attach(only.group);
       else this.transform.detach();
     }
+  }
+  selectScreen(id) {
+    this.selectedScreen = id;
+    if (id) this.selection = new Set();
+    this.applySelection();
   }
   startAim(id, cb) {
     this.aiming = { id, cb };
@@ -423,8 +484,12 @@ export class Stage3D {
       const hits = [];
       for (const f of this.fixtures.values()) hits.push(f.group.children[1]);
       const hit = this.raycaster.intersectObjects(hits, false)[0];
-      if (hit) this.onSelect && this.onSelect(hit.object.userData.fixtureId, e.shiftKey || e.metaKey);
-      else if (this.mode === 'edit') this.onSelect && this.onSelect(null, false);
+      if (hit) return this.onSelect && this.onSelect(hit.object.userData.fixtureId, e.shiftKey || e.metaKey);
+      if (this.mode === 'edit') {
+        const sh = this.raycaster.intersectObjects([...this.screens.values()].map((x) => x.surface), false)[0];
+        if (sh) return this.onSelectScreen && this.onSelectScreen(sh.object.userData.screenId);
+        this.onSelect && this.onSelect(null, false);
+      }
     });
   }
 }

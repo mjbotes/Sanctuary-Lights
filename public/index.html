@@ -315,6 +315,16 @@
         <div class="side3d">
           <div id="sel3d" class="box3d"></div>
           <div class="box3d">
+            <h3>Screens &amp; LED walls</h3>
+            <div id="screenList"></div>
+            <div class="row wrap" style="margin-top:6px">
+              <button class="btn small" id="addScreen">+ Projector screen</button>
+              <button class="btn small" id="addLed">+ LED wall</button>
+            </div>
+            <p class="hint">Place your screens where they are in the room. They show the live ProPresenter slide, and lights whose beams would land on them turn red (or switch off; see Setup).</p>
+            <div id="screenWarn" class="err"></div>
+          </div>
+          <div class="box3d">
             <h3>Stage size (metres)</h3>
             <div class="row" id="stageSize">
               <label class="mini3">Width <input type="number" step="0.5" data-k="w"></label>
@@ -371,6 +381,23 @@
             <label class="check plain"><input type="checkbox" id="webMidi"> Use this browser's MIDI instead (Chrome/Edge on the lighting Mac)</label>
             <p class="hint">By default, note <b id="noteBaseName">C1</b> (36) triggers a song's first section, the next note its second, and so on. Or use <b>Learn</b> in the song editor to map whatever your track app sends.</p>
           </fieldset>
+          <fieldset>
+            <legend>ProPresenter</legend>
+            <label class="check plain"><input type="checkbox" name="ppEnabled"> Follow ProPresenter</label>
+            <div class="row">
+              <label>Computer running ProPresenter (IP or name) <input name="ppHost" placeholder="e.g. 192.168.1.30 or localhost"></label>
+              <label style="max-width:110px">Port <input name="ppPort" type="number" min="1" max="65535"></label>
+            </div>
+            <div id="ppStatus" class="hint"></div>
+            <label class="check plain"><input type="checkbox" name="ppSections"> Slide groups (Verse, Chorus…) change the lights</label>
+            <label class="check plain"><input type="checkbox" name="ppSongs"> A presentation picks the song with the same name</label>
+            <label>Light colour follows the screen
+              <select name="ppColorMode"><option value="off">Off</option><option value="group">ProPresenter group colour</option><option value="slide">Colour of the slide on screen</option></select></label>
+            <div id="ppColorGroups" class="chips"></div>
+            <p class="hint">In ProPresenter: Settings → Network → tick <b>Enable Network</b> and note the port. Both computers must be on the same network (or use <code>localhost</code> on the same Mac). Colour sync sets the live colour of the groups ticked above (all groups if none).</p>
+          </fieldset>
+          <label>Lights pointing at screens
+            <select name="screenProtect"><option value="warn">Warn (red in the 3D view)</option><option value="block">Block: switch those lights off</option><option value="off">Ignore</option></select></label>
           <label>Frames per second <input name="fps" type="number" min="10" max="44"></label>
           <button class="btn primary">Save output settings</button>
           <div id="outErr" class="err"></div>
@@ -461,6 +488,7 @@
 </dialog>
 <dialog id="prompt"><form method="dialog"><h3 id="promptTitle"></h3><input id="promptInput"><div class="row"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary" id="promptOk">OK</button></div></form></dialog>
 <script src="fxmath.js"></script>
+<script src="geom.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

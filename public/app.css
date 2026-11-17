@@ -378,6 +378,10 @@ kbd { display: inline-block; min-width: 18px; padding: 1px 5px; border-radius: 5
 .vx .lvl { height: 6px; background: #0b0d12; border-radius: 3px; overflow: hidden; }
 .vx .lvl i { display: block; height: 100%; background: linear-gradient(90deg, #3fd27a, #f2b33d 70%, #e05050); width: 0; }
 
+.dirdial { width: 100%; max-width: 120px; aspect-ratio: 1; cursor: pointer; touch-action: none; }
+.modelrow.selscreen { outline: 2px solid var(--sel); outline-offset: 4px; border-radius: 6px; }
+.box3d .nm { background: var(--panel); }
+
 /* SONGS */
 .songs-grid { display: grid; grid-template-columns: minmax(200px, .8fr) minmax(320px, 2fr) minmax(220px, .9fr); gap: 12px; align-items: start; }
 .songhead { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
