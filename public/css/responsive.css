@@ -1,0 +1,28 @@
+/* Smaller screens (keep last) */
+@media (max-width: 1250px) {
+  .tracks-grid { grid-template-columns: minmax(200px, .8fr) minmax(380px, 2fr); }
+  .tracks-grid > .panel:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 1100px) {
+  .songs-grid { grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr); }
+  .songs-grid > .panel:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 860px) {
+  .songs-grid { grid-template-columns: 1fr; }
+  .tracks-grid { grid-template-columns: 1fr; }
+  .palbar { order: 3; }
+  .palbar .lbl { display: none; }
+  .fx-grid { grid-template-columns: 1fr; }
+  .btn.hot { padding: 10px; flex: 1; }
+  #helpBtn { display: none; }
+  .setup3d { grid-template-columns: 1fr; }
+  .bk-grid { grid-template-columns: 1fr; }
+  .live-grid, .prog-grid, .two-col { grid-template-columns: 1fr; }
+  .brand span:last-child { display: none; }
+  .nowname { font-size: 24px; }
+  main { padding: 8px; }
+  .masters { flex-wrap: wrap; gap: 8px; }
+  .gm { flex-basis: 100%; max-width: none; }
+  .badge { margin-left: 0; flex: 1; }
+  .btn.bo { flex: 1; }
+}

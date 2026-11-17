@@ -1,0 +1,47 @@
+/* LIVE */
+.live-grid { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.4fr); gap: 12px; }
+.now { padding: 4px 2px 12px; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.nowname { font-size: 28px; font-weight: 700; margin: 2px 0 6px; line-height: 1.15; }
+.nextname { font-size: 18px; color: #c3c9d6; margin-top: 2px; }
+.notes { color: var(--accent); font-size: 14px; min-height: 0; margin-bottom: 6px; }
+.progress { height: 4px; background: var(--panel2); border-radius: 2px; overflow: hidden; margin: 6px 0 12px; }
+.progress div { height: 100%; width: 100%; background: var(--accent); transition: width .08s linear; }
+.gobar { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 12px; }
+.btn.go {
+  background: linear-gradient(#2fb463, #238a4b); border-color: #3fd27a; font-size: 34px; font-weight: 800; letter-spacing: .08em; padding: 22px; color: #fff;
+  box-shadow: 0 0 0 0 #3fd27a55; transition: box-shadow .2s;
+}
+.btn.go:active { box-shadow: 0 0 0 8px #3fd27a33; }
+.cuelist { display: flex; flex-direction: column; gap: 4px; max-height: 46vh; overflow: auto; }
+.cuerow { display: flex; gap: 10px; align-items: center; padding: 10px 12px; background: var(--panel2); border: 1px solid transparent; border-radius: 8px; cursor: pointer; }
+.cuerow .n { color: var(--muted); width: 22px; text-align: right; font-variant-numeric: tabular-nums; }
+.cuerow .f { margin-left: auto; color: var(--muted); font-size: 12px; }
+.cuerow.cur { border-color: var(--go); background: #183324; }
+.cuerow.next { border-color: #3d4556; }
+.empty { color: var(--muted); padding: 14px; text-align: center; border: 1px dashed var(--line); border-radius: 8px; }
+
+.scenes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.scene { position: relative; border-radius: 10px; background: var(--panel2); border: 2px solid var(--line); overflow: hidden; min-height: 92px; display: flex; flex-direction: column; }
+.scene .tap { flex: 1; background: none; border: 0; padding: 12px 12px 6px; text-align: left; font-weight: 600; font-size: 16px; cursor: pointer; position: relative; z-index: 1; }
+.scene .fill { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.scene.on { border-color: var(--sc); }
+.scene .sw { width: 10px; height: 10px; border-radius: 50%; background: var(--sc); display: inline-block; margin-right: 6px; box-shadow: 0 0 8px var(--sc); }
+.scene input[type=range] { margin: 0 10px 10px; position: relative; z-index: 1; }
+
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 8; background: radial-gradient(ellipse at 50% 120%, #1b2130, #0b0d12 70%); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; touch-action: none; }
+.stage.small { aspect-ratio: 16 / 7; }
+.stage::after { content: 'AUDIENCE'; position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 10px; letter-spacing: .3em; color: #3a4252; pointer-events: none; }
+.fx { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; user-select: none; }
+.fx .dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #3a4252; background: #000; transition: background .08s linear, box-shadow .08s linear; }
+.stage.small .fx .dot { width: 20px; height: 20px; }
+.fx .nm { font-size: 11px; color: var(--muted); white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+.stage.small .fx .nm { display: none; }
+.fx.sel .dot { border-color: var(--sel); outline: 3px solid #4aa3ff55; }
+.fx.sel .nm { color: var(--sel); }
+.fx.prog .dot::after { content: ''; display: block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin: -3px 0 0 24px; }
+.stage.small .fx.prog .dot::after { display: none; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip { padding: 6px 12px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; font-size: 13px; }
+.chip.add { color: var(--muted); border-style: dashed; }
