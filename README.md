@@ -55,6 +55,16 @@ That creates a GitHub Release with the installers attached.
 
 To build locally: `npm install`, then `npm run dist:mac` (or `dist:win` / `dist:linux`). `npm run app` runs the desktop app without packaging it.
 
+**On a Mac, the easy way:** double-click **`build-mac.command`**. It installs what it needs and leaves `Sanctuary Lights-….dmg` in the `dist` folder.
+
+> **If the macOS build on GitHub never starts** (it waits, then shows *cancelled* with no log), the account isn't allowed macOS runners on a private repository. macOS minutes cost 10× and a $0 spending budget blocks them. To fix it, do one of these:
+>
+> - make the repository public (GitHub's Mac runners are free for public repositories)
+> - allow Actions spending under GitHub **Settings → Billing and plans**
+> - build on a Mac with `build-mac.command`
+>
+> The Windows and Linux installers are unaffected.
+
 ## Install on a Mac (without the installer)
 
 1. Install **Node.js LTS** from <https://nodejs.org> (download the macOS installer and click through).
