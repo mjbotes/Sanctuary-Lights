@@ -44,7 +44,18 @@ function shutdown() {
   app.close();
   server.close();
 }
-if (process.parentPort) process.parentPort.on('message', (e) => e.data && e.data.quit && (shutdown(), process.exit(0)));
+// Messages from the desktop app (quit, update status)
+if (process.parentPort) {
+  app.toParent = tellParent;
+  process.parentPort.on('message', (e) => {
+    const msg = e.data || {};
+    if (msg.quit) {
+      shutdown();
+      process.exit(0);
+    }
+    if (msg.update) app.setUpdate(msg.update);
+  });
+}
 if (!cfg.embedded) {
   process.on('SIGINT', () => (shutdown(), process.exit(0)));
   process.on('SIGTERM', () => (shutdown(), process.exit(0)));

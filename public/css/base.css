@@ -107,3 +107,5 @@ main { flex: 1; overflow: auto; padding: 12px; }
 .simple-row { display: flex; gap: 10px; }
 .simple-row .btn { flex: 1; }
 body[data-role="volunteer"] .badge, body[data-role="volunteer"] #helpBtn { display: none; }
+
+.updbanner { display: flex; gap: 10px; align-items: center; justify-content: center; padding: 8px 14px; background: #1d3352; border-bottom: 1px solid #34578f; font-size: 14px; flex-wrap: wrap; }

@@ -104,6 +104,17 @@
       "category": "AudioVideo",
       "icon": "build/icon.png"
     },
-    "artifactName": "Sanctuary-Lights-${version}-${os}-${arch}.${ext}"
+    "artifactName": "Sanctuary-Lights-${version}-${os}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "mjbotes",
+        "repo": "Sanctuary-Lights",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }
