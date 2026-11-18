@@ -92,9 +92,28 @@ export class Tuner {
     const shift = (a - c) / (2 * (a - 2 * b + c) || 1);
     const tauF = t + (Number.isFinite(shift) ? Math.max(-1, Math.min(1, shift)) : 0);
     this.voiced = d[t] < 0.25;
-    if (!this.voiced) return;
-    this.freq = sr2 / tauF;
-    this.period = Math.round((2 * tauF));
+    if (!this.voiced) {
+      this.history = [];
+      return;
+    }
+    this.freq = this.smooth(sr2 / tauF);
+    this.period = Math.round((2 * sr2) / this.freq);
+  }
+
+  // Clean up a new pitch reading:
+  // - octave guard: a sudden jump of about one octave from a steady pitch is usually a detection
+  //   error (locking onto a harmonic), ignored unless it lasts 3 readings
+  // - median of the last 3 readings, so one odd reading does not move the correction
+  smooth(f) {
+    const prev = this.freq;
+    const octave = (r) => Math.abs(r - 2) < 0.06 || Math.abs(r - 0.5) < 0.03;
+    if (prev && this.history && this.history.length >= 2 && octave(f / prev)) {
+      this.octaveRun = (this.octaveRun || 0) + 1;
+      if (this.octaveRun < 3) f = prev;
+    } else this.octaveRun = 0;
+    this.history = [...(this.history || []), f].slice(-3);
+    const sorted = [...this.history].sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length / 2)];
   }
 
   updateTarget() {
@@ -105,7 +124,11 @@ export class Tuner {
       return;
     }
     const midi = 69 + 12 * Math.log2(this.freq / 440);
-    const note = nearestNote(midi, p.key, p.scale);
+    let note = nearestNote(midi, p.key, p.scale);
+    // Hysteresis: stay on the current note until the singer is clearly closer to another one
+    // (avoids flipping between two notes when singing right between them).
+    const cur = this.targetNote;
+    if (cur !== null && cur !== undefined && note !== cur && Math.abs(midi - cur) < Math.abs(midi - note) + 0.3 && Math.abs(midi - cur) < 1) note = cur;
     this.targetNote = note;
     this.targetRatio = Math.pow(2, ((note - midi) * p.amount) / 12);
   }

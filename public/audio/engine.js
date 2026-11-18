@@ -2,7 +2,12 @@
 // - Stems are decoded once, then re-rendered in Web Workers when the song's key or tempo changes.
 // - Every stem has its own level, pan, mute/solo and output pair (e.g. click and guide to 3-4 for in-ears).
 // - Section markers on the timeline call onMarker(sectionId) as playback passes them.
+// - Jumps (sections, repeat, skip) happen on the next bar line, so the band stays in time.
+// - A click and count-in are generated from the song's tempo; spoken guide cues ("Chorus") play a bar early.
 // - The vocal chain: input -> auto-tune (follows the song key) -> EQ -> compressor -> outputs, with reverb and tempo delay sends.
+
+import { grid, barLength, nextBar, clickTrack, countIn } from './timing.js';
+import * as cache from './rendercache.js';
 
 const dbToGain = (db) => (db <= -60 ? 0 : Math.pow(10, db / 20));
 
@@ -25,9 +30,9 @@ class WorkerPool {
       };
     }
   }
-  run(data, semitones, tempo, onProgress) {
+  run(data, semitones, tempo, formant, onProgress) {
     return new Promise((resolve, reject) => {
-      this.queue.push({ id: this.nextId++, data, semitones, tempo, resolve, reject, onProgress });
+      this.queue.push({ id: this.nextId++, data, semitones, tempo, formant, resolve, reject, onProgress });
       this.pump();
     });
   }
@@ -37,7 +42,7 @@ class WorkerPool {
       const job = this.queue.shift();
       slot.busy = true;
       this.jobs.set(job.id, job);
-      slot.w.postMessage({ id: job.id, data: job.data, semitones: job.semitones, tempo: job.tempo });
+      slot.w.postMessage({ id: job.id, data: job.data, semitones: job.semitones, tempo: job.tempo, formant: job.formant });
     }
   }
 }
@@ -56,6 +61,8 @@ export class AudioEngine {
     this.loop = null;
     this.prepareToken = 0;
     this.vocal = null;
+    this.planned = null; // a jump waiting for its bar line: { at, to, label }
+    this.guideDone = new Set();
   }
 
   async init() {
@@ -129,7 +136,9 @@ export class AudioEngine {
   static changes(song, stem) {
     const tempo = song.targetBpm && song.bpm ? song.targetBpm / song.bpm : 1;
     const semitones = stem.keepPitch ? 0 : song.transpose || 0;
-    return { tempo, semitones };
+    // Voices keep their natural tone when the key changes (no "chipmunk" effect)
+    const formant = semitones !== 0 && !!stem.formant;
+    return { tempo, semitones, formant };
   }
 
   // Get every stem of a song ready at its current key and tempo. Calls onStatus with progress.
@@ -142,22 +151,28 @@ export class AudioEngine {
     const status = (extra) => !background && this.hooks.onStatus && this.hooks.onStatus({ songId: song.id, ...extra });
     status({ preparing: true, progress: 0, text: 'Loading tracks…' });
     await Promise.all(stems.map(async (stem) => {
-      const { tempo, semitones } = AudioEngine.changes(song, stem);
-      const key = `${stem.file}|${semitones}|${tempo.toFixed(5)}`;
+      const { tempo, semitones, formant } = AudioEngine.changes(song, stem);
+      const key = `${stem.file}|${semitones}|${tempo.toFixed(5)}|${formant}`;
       let buf = this.rendered.get(key);
       if (!buf) {
         const orig = await this.decode(stem.file);
+        const ck = cache.renderKey(stem.file, semitones, tempo, formant);
+        const saved = semitones === 0 && Math.abs(tempo - 1) < 1e-6 ? null : await cache.load(ck);
         if (semitones === 0 && Math.abs(tempo - 1) < 1e-6) buf = orig;
-        else {
+        else if (saved && saved.channels.length === orig.numberOfChannels) {
+          buf = this.ctx.createBuffer(saved.channels.length, saved.channels[0].length, saved.sampleRate);
+          saved.channels.forEach((d, c) => buf.copyToChannel(d, c));
+        } else {
           const prog = new Array(orig.numberOfChannels).fill(0);
           const chans = await Promise.all(Array.from({ length: orig.numberOfChannels }, (_, c) =>
-            this.pool.run(orig.getChannelData(c).slice(), semitones, tempo, (p) => {
+            this.pool.run(orig.getChannelData(c).slice(), semitones, tempo, formant, (p) => {
               prog[c] = p;
               status({ preparing: true, progress: (done + prog.reduce((a, b) => a + b, 0) / prog.length) / total, text: `Changing key/tempo… ${stem.name}` });
             })));
           if (token !== this.prepareToken && !background) throw new Error('cancelled');
           buf = this.ctx.createBuffer(orig.numberOfChannels, chans[0].length, orig.sampleRate);
           chans.forEach((d, c) => buf.copyToChannel(d, c));
+          cache.save(ck, chans, orig.sampleRate, this.hooks.uploadHeaders ? this.hooks.uploadHeaders() : {});
         }
         this.rendered.set(key, buf);
         if (this.rendered.size > 60) this.rendered.delete(this.rendered.keys().next().value);
@@ -188,6 +203,12 @@ export class AudioEngine {
       this.strips.set(stem.id, strip);
       this.route(strip, stem.out || 0);
     }
+    // Generated click (and the count-in and guide cues share its output)
+    const click = this.makeStrip();
+    this.strips.set('__click', click);
+    this.route(click, (song.click && song.click.out) ?? 1);
+    this.buildClick(song, false);
+    this.planned = null;
     this.applyMix(song);
     this.peaks = this.computePeaks();
     this.hooks.onStatus && this.hooks.onStatus({ songId: song.id, preparing: false, ready: true, text: song.stems.length ? 'Ready' : 'No tracks for this song' });
@@ -205,6 +226,33 @@ export class AudioEngine {
       strip.pan.pan.setTargetAtTime(stem.pan || 0, this.ctx.currentTime, 0.015);
       if ((stem.out || 0) !== strip.outPair) this.route(strip, stem.out || 0);
     }
+    const click = this.strips.get('__click');
+    if (click) {
+      const c = song.click || {};
+      // The strip is always open (count-in, guides); only the click source is muted when off.
+      click.gain.gain.setTargetAtTime(dbToGain(c.level ?? -6), this.ctx.currentTime, 0.015);
+      if (this.clickGain) this.clickGain.gain.setTargetAtTime(c.on ? 1 : 0, this.ctx.currentTime, 0.015);
+      if ((c.out ?? 1) !== click.outPair) this.route(click, c.out ?? 1);
+      const sig = JSON.stringify([song.bpm, song.targetBpm, song.beatsPerBar, song.downbeat]);
+      if (sig !== this.clickSig) this.buildClick(song);
+    }
+  }
+
+  // Click audio for the whole song at its current tempo.
+  buildClick(song, restart = true) {
+    this.clickSig = JSON.stringify([song.bpm, song.targetBpm, song.beatsPerBar, song.downbeat]);
+    const dur = Math.max(1, this.duration || 1);
+    const sr = this.ctx.sampleRate;
+    const data = clickTrack(sr, dur, grid(song));
+    const buf = this.ctx.createBuffer(1, data.length, sr);
+    buf.copyToChannel(data, 0);
+    this.clickBuf = buf;
+    if (restart && this.playing) this.play(this.position());
+  }
+
+  // Seconds of count-in left (for the display), or 0.
+  countingIn() {
+    return this.playing ? Math.max(0, this.startTime - this.ctx.currentTime) : 0;
   }
 
   computePeaks(n = 1200) {
@@ -225,39 +273,80 @@ export class AudioEngine {
   }
 
   // ----- transport ---------------------------------------------------------------
+  // Song position = startPos + (ctx time - startTime). A scheduled jump changes both at its bar line.
   position() {
     if (!this.playing) return this.pos;
+    const j = this.jumping;
+    if (j && this.ctx.currentTime >= j.when) {
+      this.startTime = j.when;
+      this.startPos = j.to;
+      this.jumping = null;
+      this.justJumped = true;
+    }
+    if (this.ctx.currentTime < this.startTime) return this.startPos; // counting in
     let p = this.startPos + (this.ctx.currentTime - this.startTime);
     if (this.loop && p > this.loop.end) p = this.loop.start + ((p - this.loop.start) % (this.loop.end - this.loop.start));
-    return p;
+    return Math.max(0, p);
   }
 
-  play(from) {
+  // Start every stem (and the click) at `pos` at context time `when`.
+  startSources(pos, when) {
+    const list = [];
+    const add = (buf, dest, gain) => {
+      if (!buf || pos >= buf.duration) return;
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      if (this.loop) Object.assign(src, { loop: true, loopStart: this.loop.start, loopEnd: this.loop.end });
+      src.connect(gain || dest);
+      src.start(when, pos);
+      list.push(src);
+    };
+    for (const stem of this.song.stems) {
+      const strip = this.strips.get(stem.id);
+      if (strip) add(this.buffers.get(stem.id), strip.input);
+    }
+    const click = this.strips.get('__click');
+    if (click && this.clickBuf) {
+      this.clickGain = this.clickGain || this.ctx.createGain();
+      this.clickGain.disconnect();
+      this.clickGain.connect(click.input);
+      this.clickGain.gain.value = this.song.click && this.song.click.on ? 1 : 0;
+      add(this.clickBuf, click.input, this.clickGain);
+    }
+    return list;
+  }
+
+  // countInBars: bars of click before the music starts (only used for "play").
+  play(from, { countInBars = 0 } = {}) {
     if (!this.song) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
     const pos = Math.max(0, Math.min(from ?? this.pos, this.duration || 0));
     this.stopSources();
-    const when = this.ctx.currentTime + 0.05;
-    for (const stem of this.song.stems) {
-      const buf = this.buffers.get(stem.id);
-      const strip = this.strips.get(stem.id);
-      if (!buf || !strip || pos >= buf.duration) continue;
+    this.planned = null;
+    this.jumping = null;
+    let when = this.ctx.currentTime + 0.05;
+    if (countInBars > 0) {
+      const ci = countIn(this.ctx.sampleRate, grid(this.song), countInBars);
+      const buf = this.ctx.createBuffer(1, ci.data.length, this.ctx.sampleRate);
+      buf.copyToChannel(ci.data, 0);
       const src = this.ctx.createBufferSource();
       src.buffer = buf;
-      if (this.loop) Object.assign(src, { loop: true, loopStart: this.loop.start, loopEnd: this.loop.end });
-      src.connect(strip.input);
-      src.start(when, pos);
+      src.connect(this.strips.get('__click').input);
+      src.start(when);
       this.sources.push(src);
+      when += ci.seconds;
     }
+    this.sources.push(...this.startSources(pos, when));
     this.startTime = when;
     this.startPos = pos;
     this.lastTickPos = pos - 0.001;
+    this.guideDone.clear();
     this.playing = true;
     this.hooks.onPlayState && this.hooks.onPlayState(true, pos);
   }
 
-  stopSources() {
-    for (const s of this.sources) try { s.stop(); s.disconnect(); } catch {}
+  stopSources(when) {
+    for (const s of this.sources) try { s.stop(when); if (when === undefined) s.disconnect(); } catch {}
     this.sources = [];
   }
 
@@ -265,12 +354,68 @@ export class AudioEngine {
     this.pos = this.position();
     this.stopSources();
     this.playing = false;
+    this.planned = null;
+    this.jumping = null;
     this.hooks.onPlayState && this.hooks.onPlayState(false, this.pos);
   }
 
   seek(pos) {
     if (this.playing) this.play(pos);
     else this.pos = Math.max(0, Math.min(pos, this.duration || 0));
+  }
+
+  // Jump to `to`: now, at the next bar line ('bar'), or at song time `at`. Replaces any planned jump.
+  jump(to, { quantize = 'bar', at = null, label = '' } = {}) {
+    if (!this.playing) return this.seek(to);
+    if (this.loop) this.setLoop(null);
+    const pos = this.position();
+    const when = at ?? (quantize === 'bar' ? nextBar(pos, grid(this.song), 0.15) : pos);
+    if (when - pos < 0.02) return this.play(to);
+    this.planned = { at: when, to, label };
+    this.hooks.onPlan && this.hooks.onPlan(this.planned);
+  }
+
+  cancelJump() {
+    this.planned = null;
+    this.hooks.onPlan && this.hooks.onPlan(null);
+  }
+
+  // The planned jump is close: schedule the audio sample-accurately.
+  armJump() {
+    const p = this.planned;
+    this.planned = null;
+    const when = Math.max(this.ctx.currentTime + 0.01, this.startTime + (p.at - this.startPos));
+    const old = this.sources;
+    this.sources = [];
+    for (const s of old) try { s.stop(when); } catch {}
+    this.sources = this.startSources(p.to, when);
+    this.jumping = { when, to: p.to };
+    this.guideDone.clear();
+    this.hooks.onPlan && this.hooks.onPlan(null);
+  }
+
+  // Where the section around `pos` starts and ends (in playback time).
+  sectionRange(pos) {
+    const ms = this.markerTimes();
+    const cur = this.sectionAt(pos);
+    const start = cur ? cur.t : 0;
+    const i = cur ? ms.indexOf(cur) : -1;
+    const next = ms.slice(i + 1).find((m) => m.t > start + 0.05);
+    return { cur, start, end: next ? next.t : this.duration || 0, next, after: next ? ms.slice(ms.indexOf(next) + 1).find((m) => m.t > next.t + 0.05) : null };
+  }
+
+  // Play this section again when it ends.
+  repeatSection() {
+    const r = this.sectionRange(this.position());
+    if (r.end <= r.start) return;
+    this.jump(r.start, { at: r.end - 0.001, label: 'repeat' });
+  }
+
+  // When this section ends, skip the next one.
+  skipNext() {
+    const r = this.sectionRange(this.position());
+    if (!r.next) return;
+    this.jump(r.after ? r.after.t : this.duration, { at: r.end - 0.001, label: 'skip' });
   }
 
   setLoop(range) {
@@ -290,6 +435,36 @@ export class AudioEngine {
     }
   }
 
+  // Spoken cue for a section name: "Verse 2" uses the "verse" sample.
+  guideFor(name) {
+    const cues = this.guideCues || {};
+    const base = String(name || '').toLowerCase().replace(/[^a-z ]/g, '').trim().split(/\s+/)[0];
+    return cues[base] || null;
+  }
+
+  // Schedule guide cues that are due in the next 0.3 s (one bar before each marker).
+  scheduleGuides(pos) {
+    if (!this.song || !this.song.guides || !this.guideCues) return;
+    const bar = barLength(grid(this.song));
+    for (const m of this.markerTimes()) {
+      const t = m.t - bar;
+      const id = `${m.sectionId}@${m.t.toFixed(2)}`;
+      if (t < pos - 0.05 || t > pos + 0.3 || this.guideDone.has(id)) continue;
+      this.guideDone.add(id);
+      const sec = this.song.sections.find((x) => x.id === m.sectionId);
+      const file = sec && this.guideFor(sec.name);
+      if (!file) continue;
+      this.decode(file).then((buf) => {
+        if (!this.playing) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(this.strips.get('__click').input);
+        src.start(Math.max(this.ctx.currentTime, this.startTime + (t - this.startPos)));
+        this.sources.push(src);
+      }).catch(() => {});
+    }
+  }
+
   // Markers are in the song's original timeline; playback time is divided by the tempo ratio.
   markerTimes() {
     if (!this.song) return [];
@@ -304,9 +479,14 @@ export class AudioEngine {
 
   tick() {
     if (!this.playing) return;
+    if (this.planned && this.position() >= this.planned.at - 0.25) this.armJump();
     const pos = this.position();
     const prev = this.lastTickPos;
-    if (pos < prev) {
+    if (this.justJumped) {
+      this.justJumped = false;
+      const m = this.sectionAt(pos);
+      if (m) this.hooks.onMarker && this.hooks.onMarker(m.sectionId);
+    } else if (pos < prev) {
       // looped back: the section at the loop start is current again
       const m = this.sectionAt(pos);
       if (m) this.hooks.onMarker && this.hooks.onMarker(m.sectionId);
@@ -314,7 +494,8 @@ export class AudioEngine {
       for (const m of this.markerTimes()) if (m.t > prev && m.t <= pos) this.hooks.onMarker && this.hooks.onMarker(m.sectionId);
     }
     this.lastTickPos = pos;
-    if (!this.loop && pos >= (this.duration || 0) - 0.01) {
+    if (!this.jumping) this.scheduleGuides(pos);
+    if (!this.loop && !this.planned && !this.jumping && pos >= (this.duration || 0) - 0.01) {
       this.stop();
       this.pos = 0;
     }

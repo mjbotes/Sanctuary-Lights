@@ -95,3 +95,37 @@ test('latency is reported and small enough for live use', async () => {
   const t = new Tuner(SR);
   assert.ok(t.info().latencyMs < 30, `${t.info().latencyMs.toFixed(1)} ms`);
 });
+
+test('steadier detection: octave errors and odd readings are smoothed out', async () => {
+  const { Tuner } = await load();
+  const t = new Tuner(SR);
+  t.voiced = true;
+  for (const f of [220, 220, 220]) t.freq = t.smooth(f);
+  t.freq = t.smooth(440); // one octave error
+  assert.strictEqual(t.freq, 220, 'octave error ignored');
+  t.freq = t.smooth(440);
+  assert.strictEqual(t.freq, 220, 'still ignored');
+  t.freq = t.smooth(440);
+  t.freq = t.smooth(440);
+  assert.strictEqual(t.freq, 440, 'a real octave jump is followed after a few readings');
+  t.history = [];
+  for (const f of [300, 300]) t.freq = t.smooth(f);
+  t.freq = t.smooth(330); // one odd reading
+  assert.strictEqual(t.freq, 300, 'median ignores one odd reading');
+});
+
+test('note hysteresis: wobbling between two notes does not flip the target', async () => {
+  const { Tuner } = await load();
+  const t = new Tuner(SR);
+  t.set({ key: 0, scale: 'chromatic', speedMs: 0 });
+  t.voiced = true;
+  const sing = (midi) => {
+    t.freq = 440 * Math.pow(2, (midi - 69) / 12);
+    t.updateTarget();
+    return t.targetNote;
+  };
+  assert.strictEqual(sing(57.45), 57);
+  assert.strictEqual(sing(57.6), 57, 'still A3 while only slightly closer to A#3');
+  assert.strictEqual(sing(57.9), 58, 'clearly A#3 now');
+  assert.strictEqual(sing(57.45), 58, 'and stays there while wobbling back a little');
+});

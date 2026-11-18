@@ -78,3 +78,34 @@ test('key and tempo together, and a chord stays a chord', () => {
   const up = Math.pow(2, 1 / 12);
   for (const f of [261.63, 329.63, 392]) assert.ok(mag(f * up) > 20 * mag(f), `peak at ${(f * up).toFixed(1)} Hz`);
 });
+
+test('formant preservation keeps a voice-like envelope in place when the pitch moves', () => {
+  // Harmonics of 150 Hz shaped by a resonance ("formant") around 900 Hz
+  const n = SR * 2;
+  const x = new Float32Array(n);
+  for (let h = 1; h * 150 < 4000; h++) {
+    const f = h * 150;
+    const amp = 0.08 * Math.exp(-(((f - 900) / 250) ** 2));
+    for (let i = 0; i < n; i++) x[i] += amp * Math.sin((2 * Math.PI * f * i) / SR);
+  }
+  // Spectral centroid between 300 and 2500 Hz in the middle of the signal
+  const centroid = (y) => {
+    const N = 16384, fft = PV.makeFFT(N);
+    const re = new Float64Array(N), im = new Float64Array(N);
+    const off = Math.floor(y.length / 2 - N / 2);
+    for (let i = 0; i < N; i++) re[i] = y[off + i] * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N));
+    fft(re, im, false);
+    let num = 0, den = 0;
+    for (let k = Math.round((300 * N) / SR); k < Math.round((2500 * N) / SR); k++) {
+      const m = Math.hypot(re[k], im[k]);
+      num += m * ((k * SR) / N);
+      den += m;
+    }
+    return num / den;
+  };
+  const c0 = centroid(x);
+  const plain = centroid(PV.process(x, 4, 1, {}));
+  const kept = centroid(PV.process(x, 4, 1, { formant: true }));
+  assert.ok(plain > c0 * 1.15, `without: formant moves up (${c0.toFixed(0)} -> ${plain.toFixed(0)} Hz)`);
+  assert.ok(Math.abs(kept - c0) < Math.abs(plain - c0) / 2.5, `with: stays close (${c0.toFixed(0)} -> ${kept.toFixed(0)} Hz)`);
+});

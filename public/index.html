@@ -154,10 +154,14 @@
           <button class="btn" id="tkStart" title="Back to the start">⏮</button>
           <button class="btn go tk-play" id="tkPlay">▶ Play</button>
           <button class="btn" id="tkLoop" title="Repeat the current section until you press it again (vamp)">⟳ Vamp</button>
+          <button class="btn" id="tkRepeat" title="Play this section once more when it ends">↻ Repeat</button>
+          <button class="btn" id="tkSkip" title="When this section ends, skip the next one">⤼ Skip next</button>
+          <span class="tk-plan" id="tkPlan"></span>
           <span class="tk-time" id="tkTime">0:00 / 0:00</span>
         </div>
-        <canvas id="tkWave" class="tk-wave" width="1200" height="120"></canvas>
+        <canvas id="tkWave" class="tk-wave" width="1200" height="120" title="Tap to jump. Drag a marker to move it (snaps to the beat; hold Shift to place it freely)."></canvas>
         <div class="tk-sections" id="tkSections"></div>
+        <details class="tk-more" id="tkMore"><summary>Click, count-in &amp; guide cues</summary><div id="tkExtras"></div></details>
         <div class="panelhead"><h2>Mixer</h2><label class="btn small">+ Add tracks…<input type="file" id="tkFiles" accept="audio/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.ogg" multiple hidden></label></div>
         <div id="tkMixer" class="mixer"></div>
       </div>

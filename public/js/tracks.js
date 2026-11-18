@@ -1,5 +1,7 @@
 // Tracks tab: backing tracks, key/tempo, mixer, vocal chain.
 import { AudioEngine } from '../audio/engine.js';
+import { MidiClock } from '../audio/midiclock.js';
+import { grid, snapToBeat } from '../audio/timing.js';
 import { $, $$, S, act, actThrottled, h, selected, toast, authHeaders } from './core.js';
 import { bindFader } from './live.js';
 import { upload } from './view3d.js';
@@ -14,6 +16,8 @@ S.clientId = lsGet('clientId') || Math.random().toString(36).slice(2, 10);
 lsSet('clientId', S.clientId);
 S.tk = { status: null, tuner: null, outputs: null, lastSeq: null, sig: '', loading: null };
 let audio = null;
+let clock = null;
+const GUIDE_NAMES = ['intro', 'verse', 'prechorus', 'chorus', 'bridge', 'instrumental', 'interlude', 'tag', 'vamp', 'outro', 'ending'];
 
 const isHost = () => !!audio && S.runtime.audioHost && S.runtime.audioHost.id === S.clientId;
 const songKeyNow = (song) => (song && song.key !== null && song.key !== undefined ? (((song.key + (song.transpose || 0)) % 12) + 12) % 12 : null);
@@ -36,8 +40,12 @@ async function becomeHost(on) {
           onMarker: (sectionId) => audio.song && act('tracks.marker', { songId: audio.song.id, sectionId }),
           onTuner: (info) => { S.tk.tuner = info; renderTuner(); },
           onOutputs: (pairs) => { S.tk.outputs = pairs; renderMixer(); },
+          onPlan: () => report(true),
+          uploadHeaders: authHeaders,
         });
         await audio.init();
+        clock = new MidiClock(audio);
+        if (lsGet('midiClock')) clock.setOutput(lsGet('midiClock')).catch(() => {});
         const dev = lsGet('audioOut');
         if (dev) audio.setOutputDevice(dev).catch(() => {});
       }
@@ -64,16 +72,26 @@ function report(force) {
   if (!force && now - lastReport < 450) return;
   lastReport = now;
   const st = S.tk.status || {};
-  act('transport.report', { songId: audio.song ? audio.song.id : null, pos: audio.position(), dur: audio.duration || 0, playing: audio.playing, looping: !!audio.loop, ready: !!st.ready, status: st.preparing ? `${st.text || 'Preparing'} ${Math.round((st.progress || 0) * 100)}%` : st.text || '' });
+  act('transport.report', { songId: audio.song ? audio.song.id : null, pos: audio.position(), dur: audio.duration || 0, playing: audio.playing, looping: !!audio.loop, ready: !!st.ready, status: st.preparing ? `${st.text || 'Preparing'} ${Math.round((st.progress || 0) * 100)}%` : st.text || '', planned: planText() });
 }
 setInterval(() => { if (isHost() && audio.playing) report(); }, 500);
+
+// What the player will do at the next bar line / section end
+function planText() {
+  const p = audio && audio.planned;
+  if (!p) return '';
+  if (p.label === 'repeat') return 'Repeating this section';
+  if (p.label === 'skip') return 'Skipping the next section';
+  return p.label ? `Next bar → ${p.label}` : 'Jumping on the next bar';
+}
 
 // The playing computer follows the shared state: song, key/tempo, mix, transport and vocal settings.
 async function syncHost() {
   if (!isHost() || !S.show) return;
   const song = S.show.songs.find((x) => x.id === S.runtime.songId);
   if (song) {
-    const sig = JSON.stringify([song.id, song.stems.map((x) => [x.id, x.file, x.keepPitch]), song.transpose, song.targetBpm, song.bpm]);
+    audio.guideCues = S.show.guideCues || {};
+    const sig = JSON.stringify([song.id, song.stems.map((x) => [x.id, x.file, x.keepPitch, x.formant]), song.transpose, song.targetBpm, song.bpm]);
     if (sig !== S.tk.sig) {
       S.tk.sig = sig;
       const load = audio.load(song).catch((e) => { if (e.message !== 'cancelled') toast(e.message, true); });
@@ -95,13 +113,18 @@ async function syncHost() {
     if (S.tk.loading) await S.tk.loading;
     if (!audio.song || audio.song.id !== t.songId) return;
     const markerOf = (sid) => audio.markerTimes().find((m) => m.sectionId === sid);
-    if (t.cmd === 'play') audio.play(t.pos ?? undefined);
+    if (t.cmd === 'play') audio.play(t.pos ?? undefined, { countInBars: audio.playing ? 0 : audio.song.countIn || 0 });
     else if (t.cmd === 'stop') audio.stop();
     else if (t.cmd === 'seek') audio.seek(t.pos || 0);
     else if (t.cmd === 'section') {
       const m = markerOf(t.sectionId);
-      if (m) { audio.seek(m.t); act('tracks.marker', { songId: audio.song.id, sectionId: m.sectionId }); }
-    } else if (t.cmd === 'loop') {
+      const sec = audio.song.sections.find((x) => x.id === t.sectionId);
+      if (m && audio.playing && !t.now && audio.song.jump !== 'now') audio.jump(m.t, { quantize: 'bar', label: sec ? sec.name : '' });
+      else if (m) { audio.seek(m.t); act('tracks.marker', { songId: audio.song.id, sectionId: m.sectionId }); }
+    } else if (t.cmd === 'repeat') audio.repeatSection();
+    else if (t.cmd === 'skip') audio.skipNext();
+    else if (t.cmd === 'cancel') audio.cancelJump();
+    else if (t.cmd === 'loop') {
       const pos = audio.position();
       const ms = audio.markerTimes();
       const cur = audio.sectionAt(pos);
@@ -122,8 +145,52 @@ function renderTracks() {
     : [h('div', { className: 'empty' }, 'Add songs on the Songs tab.')]));
   renderKeyBox();
   renderMixer();
+  renderExtras();
   renderVocal();
   tracksRuntime();
+}
+
+// Click, count-in, jump timing and spoken guide cues for the current song
+function renderExtras() {
+  const box = $('#tkExtras');
+  const song = S.show && S.show.songs.find((x) => x.id === S.runtime.songId);
+  if (!song) return box.replaceChildren(h('p', { className: 'hint' }, 'Pick a song.'));
+  if (box.contains(document.activeElement) && document.activeElement.matches('input:not([type=checkbox])')) return;
+  const set = (patch) => act('song.audio', { id: song.id, ...patch });
+  const pairs = S.tk.outputs || [{ value: 0, label: 'Main 1-2' }, { value: 1, label: '3-4' }, { value: 2, label: '5-6' }, { value: 3, label: '7-8' }];
+  const sel = (opts, cur, onv, title) => h('select', { title, onchange: (e) => onv(e.target.value) }, ...opts.map(([v, l]) => h('option', { value: v, selected: String(v) === String(cur) }, l)));
+  const cues = S.show.guideCues || {};
+  const guides = GUIDE_NAMES.map((name) => {
+    const file = h('input', { type: 'file', accept: 'audio/*', hidden: true, onchange: async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = await fetch(`/api/upload/audio?name=${encodeURIComponent(f.name)}`, { method: 'POST', body: f, headers: authHeaders() }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Upload failed' }));
+      if (!r.ok) return toast(r.error, true);
+      await act('guide.set', { name, file: r.file });
+      renderExtras();
+    } });
+    const label = name === 'prechorus' ? 'Pre-chorus' : name[0].toUpperCase() + name.slice(1);
+    return h('div', { className: `g${cues[name] ? ' has' : ''}` }, h('span', {}, cues[name] ? `● ${label}` : label),
+      h('label', { className: 'btn small', title: `Upload a spoken "${label}" cue` }, cues[name] ? 'Replace' : 'Add', file),
+      cues[name] ? h('button', { className: 'btn small', title: 'Remove', onclick: () => act('guide.set', { name, file: null }).then(renderExtras) }, '×') : null);
+  });
+  box.replaceChildren(h('div', { className: 'tk-extras' },
+    h('span', { className: 'lbl' }, 'Time signature'),
+    h('div', { className: 'row' }, sel([2, 3, 4, 5, 6, 7, 12].map((n) => [n, `${n} beats per bar`]), song.beatsPerBar, (v) => set({ beatsPerBar: Number(v) })),
+      h('span', { className: 'lbl' }, 'first downbeat at'),
+      h('input', { type: 'number', min: 0, step: 0.01, value: song.downbeat || 0, style: { width: '80px' }, title: 'Seconds into the recording where bar 1 starts', onchange: (e) => set({ downbeat: e.target.value || 0 }) }), 's'),
+    h('span', { className: 'lbl' }, 'Click'),
+    h('div', { className: 'row' },
+      h('label', { className: 'check plain' }, h('input', { type: 'checkbox', checked: song.click.on, onchange: (e) => set({ click: { on: e.target.checked } }) }), ' Play a click'),
+      sel([[0, '0 dB'], [-6, '−6 dB'], [-12, '−12 dB'], [-18, '−18 dB']], Math.round(song.click.level / 6) * 6, (v) => set({ click: { level: Number(v) } }), 'Click, count-in and guide cue level'),
+      sel(pairs.map((p) => [p.value, `to ${p.label}`]), song.click.out, (v) => set({ click: { out: Number(v) } }), 'Output (usually the in-ear mix)')),
+    h('span', { className: 'lbl' }, 'Count-in'),
+    sel([[0, 'None'], [1, '1 bar'], [2, '2 bars']], song.countIn, (v) => set({ countIn: Number(v) }), 'Clicks before the music starts when you press Play'),
+    h('span', { className: 'lbl' }, 'Section jumps'),
+    sel([['bar', 'On the next bar (stays in time)'], ['now', 'Straight away']], song.jump, (v) => set({ jump: v })),
+    h('span', { className: 'lbl' }, 'Guide cues'),
+    h('label', { className: 'check plain', title: 'A spoken cue plays one bar before each section, on the click output' }, h('input', { type: 'checkbox', checked: song.guides, onchange: (e) => set({ guides: e.target.checked }) }), ' Speak the section name a bar early'),
+    h('span', {}), h('div', { className: 'tk-guides' }, ...guides)));
 }
 
 function renderHostBox() {
@@ -143,7 +210,19 @@ function renderHostBox() {
     me ? h('div', {}, h('span', { className: 'on' }, '● Audio engine running'), ` · ${audio.channels} output channels`) :
       host ? h('div', { className: 'hint', style: { margin: 0 } }, `Audio plays on ${host.name}. This screen is a remote.`) :
         h('div', { className: 'hint', style: { margin: 0 } }, 'No computer is playing audio. Tick the box on the computer connected to the sound desk.'),
-    me ? outSel : null);
+    me ? outSel : null,
+    me ? midiClockSelect() : null);
+}
+
+function midiClockSelect() {
+  const sel = h('select', { title: 'Send MIDI clock (tempo) to keyboards, effects or Ableton', onchange: (e) => {
+    lsSet('midiClock', e.target.value);
+    clock.setOutput(e.target.value).then(() => e.target.value && toast('MIDI clock on')).catch((err) => toast(err.message, true));
+  } }, h('option', { value: '' }, 'MIDI clock: off'));
+  clock.outputs().then((list) => {
+    for (const o of list) sel.append(h('option', { value: o.id, selected: o.id === lsGet('midiClock') }, `MIDI clock → ${o.name}`));
+  }).catch(() => { sel.disabled = true; sel.title = 'Web MIDI is not available in this browser'; });
+  return sel;
 }
 
 function renderKeyBox() {
@@ -211,7 +290,13 @@ function tracksRuntime() {
     S.tk.shownSong = S.runtime.songId;
     renderKeyBox();
     renderMixer();
+    renderExtras();
   }
+  const ph = S.runtime.playhead;
+  const plan = isHost() ? planText() : ph && ph.songId === S.runtime.songId ? ph.planned || '' : '';
+  $('#tkPlan').replaceChildren(plan ? h('span', {}, plan, ' ', h('button', { className: 'btn small', onclick: () => act('transport', { cmd: 'cancel' }) }, 'Cancel')) : '');
+  $('#tkRepeat').classList.toggle('on', /Repeat/.test(plan));
+  $('#tkSkip').classList.toggle('on', /Skip/.test(plan));
   renderVocal();
   const song = S.show.songs.find((x) => x.id === S.runtime.songId);
   for (const r of $$('#tkSongs .songrow')) r.classList.remove('cur');
@@ -237,6 +322,8 @@ $('#tkPlay').onclick = () => {
 };
 $('#tkStart').onclick = () => act('transport', { cmd: 'seek', pos: 0 });
 $('#tkLoop').onclick = () => act('transport', { cmd: playState().looping ? 'unloop' : 'loop' });
+$('#tkRepeat').onclick = () => act('transport', { cmd: $('#tkRepeat').classList.contains('on') ? 'cancel' : 'repeat' });
+$('#tkSkip').onclick = () => act('transport', { cmd: $('#tkSkip').classList.contains('on') ? 'cancel' : 'skip' });
 $('#tkPrepareAll').onclick = async () => {
   if (!isHost()) return toast('Only the computer playing the audio can prepare the set', true);
   const list = S.show.songs.filter((x) => x.stems.length);
@@ -246,10 +333,38 @@ $('#tkPrepareAll').onclick = async () => {
   }
   toast('Set ready: every song is prepared at its key and tempo');
 };
+// Tap the waveform to jump; drag a marker to move it (snaps to the beat unless Shift is held).
+let drag = null;
+const waveTime = (e, dur) => {
+  const r = $('#tkWave').getBoundingClientRect();
+  return Math.max(0, Math.min(dur, ((e.clientX - r.left) / r.width) * dur));
+};
 $('#tkWave').addEventListener('pointerdown', (e) => {
-  const r = e.currentTarget.getBoundingClientRect();
   const { dur } = playState();
-  if (dur) act('transport', { cmd: 'seek', pos: ((e.clientX - r.left) / r.width) * dur });
+  const song = S.show.songs.find((x) => x.id === S.runtime.songId);
+  if (!dur || !song) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  const tempo = tempoOf(song);
+  const near = song.markers.map((m) => ({ m, d: Math.abs(((m.time / tempo) / dur) * r.width - (e.clientX - r.left)) })).sort((a, b) => a.d - b.d)[0];
+  if (near && near.d < 8) {
+    drag = { sectionId: near.m.sectionId, t: near.m.time / tempo };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    return;
+  }
+  act('transport', { cmd: 'seek', pos: waveTime(e, dur) });
+});
+$('#tkWave').addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const song = S.show.songs.find((x) => x.id === S.runtime.songId);
+  const t = waveTime(e, playState().dur);
+  drag.t = e.shiftKey || !song ? t : snapToBeat(t, grid(song));
+});
+$('#tkWave').addEventListener('pointerup', () => {
+  if (!drag) return;
+  const song = S.show.songs.find((x) => x.id === S.runtime.songId);
+  const d = drag;
+  drag = null;
+  if (song) act('marker.set', { songId: song.id, sectionId: d.sectionId, time: d.t * tempoOf(song) });
 });
 $('#tkFiles').addEventListener('change', async (e) => {
   const files = [...e.target.files];
@@ -302,10 +417,25 @@ $('#tkFiles').addEventListener('change', async (e) => {
     ctx.font = `${11 * (window.devicePixelRatio || 1)}px sans-serif`;
     for (const m of song.markers) {
       const sec = song.sections.find((x) => x.id === m.sectionId);
-      const x = ((m.time / tempo) / ps.dur) * W;
+      const x = (((drag && drag.sectionId === m.sectionId ? drag.t * tempo : m.time) / tempo) / ps.dur) * W;
       ctx.fillStyle = sec && sec.id === S.runtime.sectionId ? '#3fd27a' : '#8b93a5';
       ctx.fillRect(x, 0, 2, H);
       ctx.fillText(sec ? sec.name : '?', x + 4, 12 * (window.devicePixelRatio || 1));
+    }
+    if (isHost() && audio.planned) {
+      // planned jump: dashed line where it happens, arrow to where it goes
+      const a = (audio.planned.at / ps.dur) * W, b = (audio.planned.to / ps.dur) * W;
+      ctx.strokeStyle = '#f2b33d';
+      ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(a, 0); ctx.lineTo(a, H); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(a, H - 10); ctx.lineTo(b, H - 10); ctx.stroke();
+    }
+    if (isHost() && audio.countingIn() > 0) {
+      ctx.fillStyle = '#f2b33d';
+      ctx.font = `${16 * (window.devicePixelRatio || 1)}px sans-serif`;
+      ctx.fillText(`Count-in… ${Math.ceil(audio.countingIn() / grid(song).beat)}`, 10, H - 14);
     }
     ctx.fillStyle = '#f2b33d';
     ctx.fillRect((ps.pos / ps.dur) * W - 1, 0, 3, H);
@@ -356,6 +486,8 @@ function renderMixer() {
         ...pairs.map((p) => h('option', { value: p.value, selected: p.value === (st.out || 0) }, p.label))),
       h('label', { title: 'Untick for click tracks: they follow the tempo but keep their pitch' },
         h('input', { type: 'checkbox', checked: !st.keepPitch, onchange: (e) => act('stem.edit', { songId: song.id, id: st.id, keepPitch: !e.target.checked }) }), 'Follows key'),
+      st.keepPitch ? null : h('label', { title: 'For voices: keeps their natural tone when the key changes' },
+        h('input', { type: 'checkbox', checked: !!st.formant, onchange: (e) => act('stem.edit', { songId: song.id, id: st.id, formant: e.target.checked }) }), 'Natural voice'),
       h('button', { className: 'btn small warn', onclick: () => confirm(`Remove "${st.name}" from this song?`) && act('stem.delete', { songId: song.id, id: st.id }) }, 'Remove'));
     strip.dataset.id = st.id;
     return strip;

@@ -134,3 +134,35 @@ test('deleting a look unlinks sections', () => {
   e.dispatch({ type: 'look.delete', id: chorus.id });
   assert.strictEqual(e.show.songs[0].sections[1].lookId, null);
 });
+
+test('song grid, click, count-in and guide cues are saved and checked', () => {
+  const e = setup();
+  const song = e.show.songs[0];
+  assert.deepStrictEqual([song.beatsPerBar, song.downbeat, song.countIn, song.guides, song.jump], [4, 0, 0, false, 'bar']);
+  assert.deepStrictEqual(song.click, { on: false, level: -6, out: 1 });
+  e.dispatch({ type: 'song.audio', id: song.id, beatsPerBar: 6, downbeat: 0.512, countIn: 9, guides: true, jump: 'now', click: { on: true, level: -12, out: 2 } });
+  assert.deepStrictEqual([song.beatsPerBar, song.downbeat, song.countIn, song.guides, song.jump], [6, 0.512, 4, true, 'now']);
+  assert.deepStrictEqual(song.click, { on: true, level: -12, out: 2 });
+  e.dispatch({ type: 'guide.set', name: 'Pre-Chorus', file: 'audio/abc-prechorus.wav' });
+  assert.strictEqual(e.show.guideCues.prechorus, 'audio/abc-prechorus.wav');
+  assert.throws(() => e.dispatch({ type: 'guide.set', name: 'chorus', file: '../etc/passwd' }));
+  e.dispatch({ type: 'guide.set', name: 'prechorus', file: null });
+  assert.deepStrictEqual(e.show.guideCues, {});
+});
+
+test('voice stems keep their tone when the key changes; repeat/skip reach the player', () => {
+  const e = setup();
+  const song = e.show.songs[0];
+  e.dispatch({ type: 'stem.add', songId: song.id, file: 'audio/a-lead-vox.wav', name: 'Lead Vox.wav' });
+  e.dispatch({ type: 'stem.add', songId: song.id, file: 'audio/a-bass.wav', name: 'Bass.wav' });
+  assert.deepStrictEqual(song.stems.map((s) => s.formant), [true, false]);
+  e.dispatch({ type: 'stem.edit', songId: song.id, id: song.stems[1].id, formant: true });
+  assert.strictEqual(song.stems[1].formant, true);
+  for (const cmd of ['repeat', 'skip', 'cancel']) {
+    e.dispatch({ type: 'transport', cmd, songId: song.id });
+    assert.strictEqual(e.rt.transport.cmd, cmd);
+  }
+  e.dispatch({ type: 'transport', cmd: 'section', songId: song.id, sectionId: song.sections[1].id, now: true });
+  assert.strictEqual(e.rt.transport.now, true);
+  assert.throws(() => e.dispatch({ type: 'transport', cmd: 'rewind' }));
+});

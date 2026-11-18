@@ -14,9 +14,20 @@
 .transport { display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
 .btn.tk-play { font-size: 18px; padding: 12px 22px; letter-spacing: .04em; }
 .btn.tk-play.playing { background: linear-gradient(#c94444, #9b2f2f); border-color: #e06060; }
-#tkLoop.on { background: #6b551f; border-color: var(--accent); }
+#tkLoop.on, #tkRepeat.on, #tkSkip.on { background: #6b551f; border-color: var(--accent); }
 .tk-time { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 18px; color: #c3c9d6; }
 .tk-wave { width: 100%; height: 110px; display: block; background: #0b0d12; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; touch-action: none; }
+.tk-plan { color: var(--accent); font-size: 13px; font-weight: 600; }
+.tk-more { margin: 6px 0 10px; border: 1px solid var(--line); border-radius: 10px; background: #12151c; padding: 8px 10px; font-size: 13px; }
+.tk-more summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.tk-extras { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; margin-top: 10px; }
+.tk-extras .lbl { color: var(--muted); font-size: 12px; }
+.tk-extras > select { justify-self: start; }
+.tk-extras select, .tk-extras input:not([type=checkbox]) { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px; color: var(--text); }
+.tk-guides { display: flex; flex-wrap: wrap; gap: 6px; }
+.tk-guides .g { display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; background: var(--panel2); }
+.tk-guides .g.has { border-color: var(--go-hi); }
+.tk-guides .g button, .tk-guides .g label { font-size: 12px; padding: 2px 6px; }
 .tk-sections { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .tk-sec { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); overflow: hidden; }
 .tk-sec button { background: none; border: 0; padding: 7px 10px; cursor: pointer; font-size: 13px; }

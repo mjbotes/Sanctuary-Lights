@@ -61,6 +61,12 @@
     const pad = half;
     const len = x.length;
     const outLen = Math.round(len * alpha);
+    // Formant preservation (voices): the pitch will be moved by `shift` after this stretch,
+    // so pre-shape each frame's spectrum to keep its envelope (the voice character) in place.
+    const shift = opts.formantShift && Math.abs(opts.formantShift - 1) > 1e-6 ? opts.formantShift : 0;
+    const cre = shift ? new Float64Array(N) : null, cim = shift ? new Float64Array(N) : null;
+    const env = shift ? new Float64Array(half + 1) : null;
+    const lifter = Math.max(8, Math.round(N / 100)); // keeps the broad envelope, drops the harmonics
     const frames = Math.ceil((len + pad) / Ha) + 1;
     const out = new Float64Array(Math.ceil(frames * Hs + N + pad * alpha) + N);
     const norm = new Float64Array(out.length);
@@ -82,6 +88,25 @@
         mag[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
         phase[k] = Math.atan2(im[k], re[k]);
         energy += mag[k] * mag[k];
+      }
+      if (shift) {
+        // Cepstral smoothing: log spectrum -> cepstrum -> keep low quefrencies -> envelope
+        for (let k = 0; k <= half; k++) cre[k] = Math.log(mag[k] + 1e-9);
+        for (let k = half + 1; k < N; k++) cre[k] = cre[N - k];
+        cim.fill(0);
+        fft(cre, cim, true);
+        for (let q = 0; q < N; q++) {
+          if (q > lifter && q < N - lifter) { cre[q] = 0; cim[q] = 0; } else { cre[q] /= N; cim[q] /= N; }
+        }
+        fft(cre, cim, false);
+        for (let k = 0; k <= half; k++) env[k] = cre[k];
+        // Bin k ends up at k * shift: give it the envelope that belongs at k * shift
+        for (let k = 1; k <= half; k++) {
+          const src = k * shift;
+          const i = Math.min(half - 1, Math.floor(src)), f = Math.min(1, src - i);
+          const target = src >= half ? env[half] : env[i] + (env[i + 1] - env[i]) * f;
+          mag[k] *= Math.exp(Math.max(-6, Math.min(6, target - env[k])));
+        }
       }
       // Transient: big jump in energy -> take the analysis phases as they are.
       const transient = !first && energy > 4 * prevEnergy + 1e-9 && energy > 1e-6;
@@ -188,7 +213,8 @@
     const outLen = Math.round(x.length / t);
     if (Math.abs(pitch - 1) < 1e-6 && Math.abs(t - 1) < 1e-6) return Float32Array.from(x);
     const alpha = pitch / t; // stretch so that resampling by `pitch` lands on the new length
-    const s = stretch(x, alpha, opts, onProgress && ((p) => onProgress(p * 0.9)));
+    const o = { ...(opts || {}), formantShift: opts && opts.formant ? pitch : 0 };
+    const s = stretch(x, alpha, o, onProgress && ((p) => onProgress(p * 0.9)));
     if (Math.abs(pitch - 1) < 1e-6) return s.length === outLen ? s : s.subarray(0, outLen);
     const y = resample(s, pitch, outLen);
     if (onProgress) onProgress(1);
