@@ -26,14 +26,16 @@ Step-by-step guides for volunteers, operators and whoever sets it up are built i
 
 ## Desktop app (installer)
 
-Download the installer from the repository's **Releases** page (or from the latest **Actions → Build installers** run, under *Artifacts*):
+**Download the newest version** (these links always point at the latest release):
 
-| System | File |
+| System | Download |
 |---|---|
-| Mac with Apple Silicon (M1–M4) | `Sanctuary-Lights-…-mac-arm64.dmg` |
-| Intel Mac | `Sanctuary-Lights-…-mac-x64.dmg` |
-| Windows | `Sanctuary-Lights-…-win-x64.exe` |
-| Linux | `Sanctuary-Lights-…-linux-x86_64.AppImage` |
+| Mac with Apple Silicon (M1, M2, M3, M4…) | [Sanctuary-Lights-mac-arm64.dmg](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-mac-arm64.dmg) |
+| Intel Mac | [Sanctuary-Lights-mac-x64.dmg](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-mac-x64.dmg) |
+| Windows | [Sanctuary-Lights-Windows-Setup.exe](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-Windows-Setup.exe) |
+| Linux | [Sanctuary-Lights-Linux.AppImage](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-Linux.AppImage) |
+
+Not sure which Mac you have? Apple menu → **About This Mac**: *Chip: Apple M…* means Apple Silicon, *Processor: Intel* means Intel. All versions and release notes: [Releases](https://github.com/mjbotes/Sanctuary-Lights/releases).
 
 On a Mac, open the `.dmg` and drag **Sanctuary Lights** to Applications. It's a normal Mac app: it appears in the Dock, keeps running in the background without slowing down audio or lighting timing, and has its own menu (View → Toggle Full Screen).
 
@@ -41,6 +43,12 @@ On a Mac, open the `.dmg` and drag **Sanctuary Lights** to Applications. It's a 
 - **Permissions:** allow the microphone (for vocals) and the local network (for Art-Net/sACN and iPads) when asked.
 
 The app includes everything (no Node.js needed), and iPads can still connect to the address shown in Setup.
+
+### Publishing a new version
+
+1. Merge the changes into `main`.
+2. Create a version tag and push it, e.g. `git tag v1.0.1 && git push origin v1.0.1` (or on GitHub: **Releases → Draft a new release → Choose a tag → v1.0.1 → Publish**).
+3. **Actions → Build installers** builds the Mac, Windows and Linux installers and attaches them to the release. The download links above then give the new version, and installed apps update themselves.
 
 ### Building installers with GitHub Actions
 

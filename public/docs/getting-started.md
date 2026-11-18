@@ -15,10 +15,13 @@
 
 ## Install
 
-1. Download the installer for your computer from the project's **Releases** page:
-   - Mac: the `.dmg` (`arm64` for Apple Silicon, `x64` for Intel)
-   - Windows: the `.exe`
-   - Linux: the `.AppImage`
+1. Download the installer for your computer. These links always give the newest version:
+   - [Mac with Apple Silicon (M1, M2, M3, M4…)](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-mac-arm64.dmg)
+   - [Intel Mac](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-mac-x64.dmg)
+   - [Windows](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-Windows-Setup.exe)
+   - [Linux](https://github.com/mjbotes/Sanctuary-Lights/releases/latest/download/Sanctuary-Lights-Linux.AppImage)
+
+   Not sure which Mac? Apple menu → **About This Mac**: *Chip: Apple M…* is Apple Silicon.
 2. **Mac:** open the `.dmg` and drag **Sanctuary Lights** into Applications. The first time, macOS may say it can't check the app. Open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
 3. Allow the **local network** when asked (needed for Art-Net, sACN and iPads), and the **microphone** if you'll use the vocal features.
 
