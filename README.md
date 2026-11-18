@@ -16,6 +16,14 @@ A simple, free lighting controller for churches. It runs on a Mac, and volunteer
 - **Saving and updates:** the show saves automatically, and the desktop app updates itself.
 - **No installs beyond Node.js:** apart from an optional MIDI module, the app has no other dependencies.
 
+## User guide
+
+Step-by-step guides for volunteers, operators and whoever sets it up are built into the app (**Help** tab, or the **?** button for the screen you're on). The same guides are in [`public/docs`](public/docs/index.md):
+
+- [Volunteer quick card](public/docs/volunteer-card.md) (print it for the desk) · [Running a service](public/docs/sunday.md) · [When something goes wrong](public/docs/troubleshooting.md)
+- [Getting started](public/docs/getting-started.md) · [Connecting lights and gear](public/docs/connections.md) · [Looks, cues and scenes](public/docs/looks-and-cues.md) · [Songs](public/docs/songs.md) · [Service parts](public/docs/service-parts.md) · [ProPresenter](public/docs/propresenter.md)
+- [Live control, pads and effects](public/docs/live-effects.md) · [Tracks](public/docs/tracks.md) · [3D stage](public/docs/stage-3d.md) · [Safety, PINs and backups](public/docs/safety.md) · [Glossary](public/docs/glossary.md)
+
 ## Desktop app (installer)
 
 Download the installer from the repository's **Releases** page (or from the latest **Actions → Build installers** run, under *Artifacts*):

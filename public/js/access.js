@@ -5,8 +5,8 @@
 import { $, $$, S, act, authHeaders, connect, emit, getToken, h, on, setToken, toast } from './core.js';
 
 const TABS_FOR = {
-  volunteer: ['simple'],
-  operator: ['simple', 'live', 'songs', 'tracks', 'program', 'fx', 'show'],
+  volunteer: ['simple', 'help'],
+  operator: ['simple', 'live', 'songs', 'tracks', 'program', 'fx', 'show', 'help'],
   admin: null, // all
 };
 const ROLE_NAMES = { volunteer: 'Volunteer', operator: 'Operator', admin: 'Admin' };

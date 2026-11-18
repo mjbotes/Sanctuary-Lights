@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="css/tracks.css">
 <link rel="stylesheet" href="css/setup.css">
 <link rel="stylesheet" href="css/parts.css">
+<link rel="stylesheet" href="css/help.css">
 <link rel="stylesheet" href="css/palette.css">
 <link rel="stylesheet" href="css/songs.css">
 <link rel="stylesheet" href="css/responsive.css">
@@ -40,6 +41,7 @@
     <button data-tab="show">Cues &amp; Scenes</button>
     <button data-tab="patch">Patch</button>
     <button data-tab="setup">Setup</button>
+    <button data-tab="help">Help</button>
   </nav>
   <button id="undoBtn" class="btn small iconbtn" disabled aria-label="Undo">↶</button>
   <button id="redoBtn" class="btn small iconbtn" disabled aria-label="Redo">↷</button>
@@ -521,6 +523,17 @@
       </div>
     </div>
   </section>
+  <!-- HELP -->
+  <section id="tab-help" class="tab">
+    <div class="help-grid">
+      <div class="panel help-side">
+        <input id="helpSearch" type="search" placeholder="Search the guides…" aria-label="Search the guides">
+        <div id="helpList"></div>
+        <div class="help-tools"><button class="btn small" id="helpBack" title="Back to the screen you came from">← Back</button><button class="btn small" id="helpPrint" title="Print this guide (e.g. the volunteer card)">Print</button></div>
+      </div>
+      <div class="panel"><article id="helpArticle" class="help-article"></article></div>
+    </div>
+  </section>
 </main>
 
 <footer class="masters">
@@ -533,7 +546,7 @@
   <button id="progBadge" class="btn small badge" hidden></button>
   <button id="strobeBtn" class="btn hot" title="Hold to strobe everything (key S)">Strobe <kbd>S</kbd></button>
   <button id="flashBtn" class="btn hot" title="Hold for everything at full (key F)">Flash <kbd>F</kbd></button>
-  <button id="helpBtn" class="btn small" title="Keyboard shortcuts (?)">?</button>
+  <button id="helpBtn" class="btn small" title="Help for this screen (the ? key lists the keyboard shortcuts)">?</button>
   <button id="panicBtn" class="btn panic" title="Hold for 1 second: stop all effects and live changes, go to the safe look">Panic</button>
   <button id="blackout" class="btn bo">Blackout</button>
 </footer>
@@ -585,7 +598,7 @@
       <tr><td><kbd>?</kbd></td><td>This list</td></tr>
     </table>
     <p class="hint">Shortcuts work on every tab, except while typing in a box.</p>
-    <div class="row" style="justify-content:flex-end"><button value="ok" class="btn primary">Close</button></div>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn" id="helpFull">Open the guides</button><button value="ok" class="btn primary">Close</button></div>
   </form>
 </dialog>
 <dialog id="fixtureDialog" class="wide">

@@ -71,7 +71,6 @@ function holdButton(btn, type) {
 }
 holdButton($('#strobeBtn'), 'strobe.hold');
 holdButton($('#flashBtn'), 'flash.all');
-$('#helpBtn').onclick = () => $('#helpDialog').showModal();
 
 // Global hotkeys (hold keys send "down" and "up")
 const heldKeys = new Map();

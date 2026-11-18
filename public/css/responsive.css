@@ -14,7 +14,6 @@
   .palbar .lbl { display: none; }
   .fx-grid { grid-template-columns: 1fr; }
   .btn.hot { padding: 10px; flex: 1; }
-  #helpBtn { display: none; }
   .setup3d { grid-template-columns: 1fr; }
   .bk-grid { grid-template-columns: 1fr; }
   .live-grid, .prog-grid, .two-col { grid-template-columns: 1fr; }
