@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lights">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#0d0f14">
+<title>Sanctuary Lights</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/live.css">
+<link rel="stylesheet" href="css/program.css">
+<link rel="stylesheet" href="css/stage3d.css">
+<link rel="stylesheet" href="css/pads.css">
+<link rel="stylesheet" href="css/fx.css">
+<link rel="stylesheet" href="css/tricks.css">
+<link rel="stylesheet" href="css/tracks.css">
+<link rel="stylesheet" href="css/setup.css">
+<link rel="stylesheet" href="css/parts.css">
+<link rel="stylesheet" href="css/help.css">
+<link rel="stylesheet" href="css/palette.css">
+<link rel="stylesheet" href="css/songs.css">
+<link rel="stylesheet" href="css/responsive.css">
+<script type="importmap">{ "imports": { "three": "/vendor/three/build/three.module.min.js", "three/addons/": "/vendor/three/jsm/" } }</script>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo"></span><span id="showName">Sanctuary Lights</span></div>
+  <nav id="tabs">
+    <button data-tab="simple">Volunteer</button>
+    <button data-tab="live" class="on">Live</button>
+    <button data-tab="songs">Songs</button>
+    <button data-tab="tracks">Tracks</button>
+    <button data-tab="program">Program</button>
+    <button data-tab="fx">FX &amp; Presets</button>
+    <button data-tab="show">Cues &amp; Scenes</button>
+    <button data-tab="patch">Patch</button>
+    <button data-tab="setup">Setup</button>
+    <button data-tab="help">Help</button>
+  </nav>
+  <button id="undoBtn" class="btn small iconbtn" disabled aria-label="Undo">↶</button>
+  <button id="redoBtn" class="btn small iconbtn" disabled aria-label="Redo">↷</button>
+  <button id="roleBadge" class="btn small rolebadge" hidden title="Lock this screen">Admin</button>
+  <div id="midiPill" class="midipill" title="MIDI from the tracks">MIDI</div>
+  <div id="conn" class="conn" title="Connection to the lighting computer">●</div>
+</header>
+
+<div id="updateBanner" class="updbanner" hidden></div>
+<main>
+  <!-- VOLUNTEER -->
+  <section id="tab-simple" class="tab">
+    <div class="partbar big"></div>
+    <div class="panel simple" id="simpleBox"></div>
+  </section>
+
+  <!-- LIVE -->
+  <section id="tab-live" class="tab on">
+    <div class="partbar"></div>
+    <div class="live-grid">
+      <div class="panel cuepanel">
+        <div class="now">
+          <div class="label">Now</div>
+          <div id="nowName" class="nowname">—</div>
+          <div id="nowNotes" class="notes"></div>
+          <div class="progress"><div id="cueProgress"></div></div>
+          <div class="label">Next</div>
+          <div id="nextName" class="nextname">—</div>
+        </div>
+        <div class="gobar">
+          <button id="backBtn" class="btn big">◀ Back</button>
+          <button id="goBtn" class="btn go">GO</button>
+        </div>
+        <div id="liveCues" class="cuelist"></div>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Scenes</h2><button class="btn small" data-act="scene.releaseAll">Release all</button></div>
+        <div id="liveScenes" class="scenes"></div>
+        <div class="panelhead"><h2>Stage</h2><div class="seg small viewseg"><button data-view="2d">2D</button><button data-view="3d">3D</button></div></div>
+        <div id="liveStage" class="stage small view2d"></div>
+        <div id="live3d" class="wrap3d view3d"></div>
+      </div>
+    </div>
+    <div class="panel padpanel" id="livePads"></div>
+    <div class="panel buskpanel" id="liveBusk"></div>
+  </section>
+
+  <!-- SONGS -->
+  <section id="tab-songs" class="tab">
+    <div class="partbar"></div>
+    <div class="songs-grid">
+      <div class="panel">
+        <div class="panelhead"><h2>Set list</h2><button class="btn small" id="addSong">+ Song</button></div>
+        <div id="songList" class="cuelist"></div>
+      </div>
+      <div class="panel">
+        <div class="songhead">
+          <div class="grow">
+            <div class="label">Song</div>
+            <div id="songTitle" class="nowname">—</div>
+            <div id="songNotes" class="notes"></div>
+          </div>
+          <div class="seg" id="modeSeg" role="group" aria-label="Follow mode">
+            <button data-mode="manual" title="Operator taps sections. MIDI from the tracks is ignored.">Manual</button>
+            <button data-mode="hybrid" title="Follows the tracks. Tap any section to override.">Hybrid</button>
+            <button data-mode="auto" title="Follows the tracks. Section buttons are locked.">Auto</button>
+          </div>
+        </div>
+        <div class="midirow">
+          <span id="midiLast" class="hint">No MIDI received yet.</span>
+          <button class="btn small" id="holdBtn" title="Ignore the tracks until you press Resume">Hold</button>
+        </div>
+        <div id="sectionPads" class="pads"></div>
+        <div class="gobar">
+          <button id="prevSec" class="btn big">◀ Prev</button>
+          <button id="nextSec" class="btn go">NEXT</button>
+        </div>
+        <div class="padpanel inset" id="songsPads"></div>
+        <div class="buskpanel inset" id="songsBusk"></div>
+        <div class="panelhead"><h2>Edit song</h2><button class="btn small" id="editSongBtn">Show editor</button></div>
+        <div id="songEditor" hidden>
+          <div class="form">
+            <div class="row">
+              <label>Name <input id="songName"></label>
+              <label>Note for operator <input id="songNoteInput" placeholder="e.g. long instrumental intro"></label>
+              <label style="max-width:90px">BPM <input id="songBpm" type="number" min="30" max="300" placeholder="—"></label>
+            </div>
+            <div class="row wrap trig">
+              <span class="hint">Song is selected by:</span>
+              <span id="songTrig"></span>
+            </div>
+          </div>
+          <div class="label" style="margin-top:12px">Add section</div>
+          <div class="chips" id="quickSections"></div>
+          <table class="tbl"><thead><tr><th>Section</th><th>Look</th><th>Fade</th><th>MIDI trigger</th><th></th></tr></thead><tbody id="sectionTable"></tbody></table>
+          <div class="row wrap" style="margin-top:12px">
+            <button class="btn warn" id="deleteSong">Delete song</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Looks</h2><button class="btn small primary" id="recLook">+ Record from stage</button></div>
+        <div id="lookList" class="looklist"></div>
+        <p class="hint">A look is a whole-stage state that sections use, such as "Verse", "Chorus" or "Bridge build". Set the lights on the Program tab, then record. If you improve a look, every song that uses it gets the change. A section whose name matches a look ("Verse 2" → "Verse") picks it automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRACKS -->
+  <section id="tab-tracks" class="tab">
+    <div class="tracks-grid">
+      <div class="panel">
+        <div class="panelhead"><h2>Set list</h2><button class="btn small" id="tkPrepareAll" title="Render every song at its key/tempo in the background">Prepare set</button></div>
+        <div id="tkSongs" class="cuelist"></div>
+        <div class="hostbox" id="hostBox"></div>
+      </div>
+      <div class="panel">
+        <div class="songhead">
+          <div class="grow"><div class="label">Song</div><div id="tkTitle" class="nowname">—</div><div id="tkStatus" class="hint"></div></div>
+          <div class="keybox" id="tkKey"></div>
+        </div>
+        <div class="transport">
+          <button class="btn" id="tkStart" title="Back to the start">⏮</button>
+          <button class="btn go tk-play" id="tkPlay">▶ Play</button>
+          <button class="btn" id="tkLoop" title="Repeat the current section until you press it again (vamp)">⟳ Vamp</button>
+          <button class="btn" id="tkRepeat" title="Play this section once more when it ends">↻ Repeat</button>
+          <button class="btn" id="tkSkip" title="When this section ends, skip the next one">⤼ Skip next</button>
+          <span class="tk-plan" id="tkPlan"></span>
+          <span class="tk-time" id="tkTime">0:00 / 0:00</span>
+        </div>
+        <canvas id="tkWave" class="tk-wave" width="1200" height="120" title="Tap to jump. Drag a marker to move it (snaps to the beat; hold Shift to place it freely)."></canvas>
+        <div class="tk-sections" id="tkSections"></div>
+        <details class="tk-more" id="tkMore"><summary>Click, count-in &amp; guide cues</summary><div id="tkExtras"></div></details>
+        <div class="panelhead"><h2>Mixer</h2><label class="btn small">+ Add tracks…<input type="file" id="tkFiles" accept="audio/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.ogg" multiple hidden></label></div>
+        <div id="tkMixer" class="mixer"></div>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Vocal</h2><span class="hint" id="vxLatency" style="margin:0"></span></div>
+        <div id="vxBox"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRAM -->
+  <section id="tab-program" class="tab">
+    <div class="prog-grid">
+      <div class="panel">
+        <div class="panelhead">
+          <h2>Select lights</h2>
+          <div class="row">
+            <div class="seg small viewseg"><button data-view="2d">2D</button><button data-view="3d">3D</button></div>
+            <button class="btn small" id="selAll">All</button>
+            <button class="btn small" id="selNone">None</button>
+          </div>
+        </div>
+        <div id="groupBar" class="chips"></div>
+        <div id="progStage" class="stage view2d"></div>
+        <div id="prog3d" class="wrap3d tall view3d"></div>
+        <div class="hint" id="selInfo">Tap lights to select them.</div>
+      </div>
+      <div class="panel controls" id="controls">
+        <div class="ctl">
+          <div class="ctlhead"><span>Intensity</span><b id="dimVal">—</b></div>
+          <input type="range" id="dim" min="0" max="1000" value="0">
+          <div class="row quick">
+            <button class="btn small" data-dim="0">Off</button>
+            <button class="btn small" data-dim="0.25">25%</button>
+            <button class="btn small" data-dim="0.5">50%</button>
+            <button class="btn small" data-dim="0.75">75%</button>
+            <button class="btn small" data-dim="1">Full</button>
+          </div>
+        </div>
+        <div class="ctl" id="colorCtl">
+          <div class="ctlhead"><span>Colour</span><input type="color" id="colorPick" value="#ffffff" aria-label="Custom colour"></div>
+          <div id="swatches" class="swatches"></div>
+          <div id="extraColor"></div>
+        </div>
+        <div class="ctl" id="moveCtl" hidden>
+          <div class="ctlhead"><span>Position</span><button class="btn small" id="centerPos">Centre</button></div>
+          <div id="xy" class="xy"><div id="xyDot"></div></div>
+        </div>
+        <div id="otherCtl"></div>
+        <div class="row wrap actions">
+          <button class="btn" id="locateBtn">Locate</button>
+          <button class="btn" id="clearSelBtn">Clear selected</button>
+          <button class="btn warn" id="clearAllBtn">Clear all</button>
+        </div>
+        <div class="record">
+          <h3>Save what's on stage</h3>
+          <div class="row wrap">
+            <button class="btn primary" id="recCue">Record new cue</button>
+            <button class="btn" id="updCue">Update current cue</button>
+            <button class="btn" id="recScene">Save as scene</button>
+          </div>
+          <p class="hint">A <b>cue</b> saves the whole stage look and goes in the GO list. A <b>scene</b> saves only the lights you've changed here, so you can switch it on over anything (e.g. "Pulpit", "Baptism").</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FX & PRESETS -->
+  <section id="tab-fx" class="tab">
+    <div class="fx-grid">
+      <div class="panel">
+        <div class="panelhead"><h2>Selection</h2><div class="row"><button class="btn small" id="fxSelAll">All</button><button class="btn small" id="fxSelNone">None</button></div></div>
+        <div id="fxGroups" class="chips"></div>
+        <div id="fxSelList" class="selorder"></div>
+        <p class="hint">Tap lights in the order you want effects to travel. The order sets the phase: the first light starts, the last light finishes. The same selection is used on the Program tab.</p>
+
+        <div class="panelhead"><h2>Selection tricks</h2></div>
+        <div id="tricksBox" class="tricks"></div>
+
+        <div class="panelhead"><h2>Presets</h2><button class="btn small" id="presetEdit">Edit</button></div>
+        <div class="seg small" id="presetKinds">
+          <button data-kind="all-kinds" class="on">All</button><button data-kind="dim">Dimmer</button><button data-kind="color">Colour</button><button data-kind="position">Position</button><button data-kind="beam">Beam</button>
+        </div>
+        <div id="presetGrid" class="presetgrid"></div>
+        <div class="row wrap" style="margin-top:10px">
+          <button class="btn primary" id="presetRecord">+ Record preset</button>
+          <button class="btn" id="fxClearProg">Clear programmer</button>
+        </div>
+        <p class="hint">Set lights on the Program tab (or here with presets), select them, then record. Tap a preset to apply it to the selected lights. Cues and looks remember which preset they use: update the preset and they all change.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panelhead"><h2>Effects</h2><button class="btn small" id="fxNew">+ New effect</button></div>
+        <div class="seg small" id="fxCats">
+          <button data-cat="dim" class="on">Dimmer</button><button data-cat="color">Colour</button><button data-cat="position">Position</button><button data-cat="beam">Beam</button><button data-cat="custom">My effects</button>
+        </div>
+        <div id="fxList" class="fxlist"></div>
+        <div class="row wrap fxrun">
+          <span class="hint" id="fxPicked">Pick an effect.</span>
+          <select id="fxRunTarget"></select>
+          <select id="fxRunRate" title="Speed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+          <button class="btn primary" id="fxRun">▶ Run</button>
+        </div>
+
+        <div class="panelhead"><h2>Running</h2><button class="btn small warn" id="fxStopAll">Stop all</button></div>
+        <div id="fxRunning"></div>
+
+        <div class="panelhead"><h2 id="fxEdTitle">Effect editor</h2><div class="row"><button class="btn small" id="fxCopy">Copy to edit</button><button class="btn small warn" id="fxDelete">Delete</button></div></div>
+        <div id="fxEditor" class="fxeditor"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CUES & SCENES -->
+  <section id="tab-show" class="tab">
+    <div class="two-col">
+      <div class="panel">
+        <div class="panelhead"><h2>Cue list</h2><button class="btn small" data-act="cue.release">Fade out cue list</button></div>
+        <div class="tblwrap"><table class="tbl cuetbl"><thead><tr><th>#</th><th>Name</th><th title="Fade time (up)">Fade</th><th title="Fade-down time for lights going down (empty = same as fade)">Down</th><th title="Wait before the cue starts changing">Delay</th><th title="Go to the next cue automatically, this many seconds after this one finished">Follow</th><th title="Timecode: the cue goes when MIDI timecode passes this time">Timecode</th><th>Notes</th><th></th></tr></thead><tbody id="cueTable"></tbody></table></div>
+        <label class="check plain" style="margin-top:8px"><input type="checkbox" id="trackingToggle"> Tracking cue list: cues store only what they change, the rest carries on from the cues before (tick "Block" on a cue to stop that)</label>
+        <p class="hint">Record cues on the Program tab. Tap a cue's number to jump to it.</p>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Scenes</h2></div>
+        <table class="tbl"><thead><tr><th>Colour</th><th>Name</th><th>Fade (s)</th><th></th></tr></thead><tbody id="sceneTable"></tbody></table>
+        <p class="hint">"Update" replaces a scene with what is currently set on the Program tab.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PATCH -->
+  <section id="tab-patch" class="tab">
+    <div class="two-col">
+      <div class="panel">
+        <div class="panelhead"><h2>Add lights</h2></div>
+        <form id="addForm" class="form">
+          <label>Type <select name="profile" id="addProfile"></select></label>
+          <label>Name <input name="name" placeholder="e.g. Front wash"></label>
+          <div class="row">
+            <label>How many <input name="count" type="number" min="1" max="128" value="1"></label>
+            <label>Universe <input name="universe" type="number" min="1" value="1"></label>
+            <label>Start address <input name="address" type="number" min="1" max="512" placeholder="auto"></label>
+          </div>
+          <button class="btn primary">Add</button>
+        </form>
+        <div class="panelhead"><h2>Patched lights</h2><button class="btn small" id="arrangeBtn">Arrange stage</button></div>
+        <div id="arrangeWrap" hidden>
+          <p class="hint">Drag lights to where they hang in the room. Top = back of stage.</p>
+          <div id="arrangeStage" class="stage"></div>
+        </div>
+        <table class="tbl"><thead><tr><th>Name</th><th>Type</th><th>Univ</th><th>Addr</th><th></th></tr></thead><tbody id="fixTable"></tbody></table>
+      </div>
+      <div class="panel">
+        <div class="panelhead"><h2>Fixture types</h2><label class="btn small primary">Import GDTF / OFL…<input type="file" id="fixtureFile" accept=".gdtf,.json" multiple hidden></label></div>
+        <p class="hint">Get your lights' files from <b>gdtf-share.com</b> (GDTF) or <b>open-fixture-library.org</b> (download "OFL JSON"). They bring the right channels, colour wheels, gobos and shutter settings.</p>
+        <div id="profileList"></div>
+        <form id="profForm" class="form">
+          <h3 id="profFormTitle">New fixture type</h3>
+          <input type="hidden" name="id">
+          <label>Name <input name="name" placeholder="e.g. Chauvet SlimPAR 6ch mode" required></label>
+          <label>Channels, in order <input name="channels" placeholder="dim red green blue strobe=0 0" required></label>
+          <p class="hint">Words: <code>dim red green blue white amber uv pan tilt zoom focus strobe haze fan</code>. Add <code>.fine</code> for a 16-bit fine channel (<code>pan.fine</code>), <code>=n</code> for a default value (<code>strobe=0</code>), a number for a fixed value (<code>255</code>), or <code>-</code> for an unused channel. Copy the order from your light's manual.</p>
+          <div class="row"><button class="btn primary">Save type</button><button type="button" class="btn" id="profCancel">New</button></div>
+        </form>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <div class="panelhead">
+        <h2>3D stage &amp; rig</h2>
+        <div class="row wrap">
+          <label class="btn small">Import MVR…<input type="file" id="mvrFile" accept=".mvr,.zip" hidden></label>
+          <label class="btn small">Add 3D model…<input type="file" id="modelFile" accept=".glb,.gltf,.obj,.3ds" hidden></label>
+        </div>
+      </div>
+      <div class="setup3d">
+        <div id="patch3d" class="wrap3d tall"></div>
+        <div class="side3d">
+          <div id="sel3d" class="box3d"></div>
+          <div class="box3d">
+            <h3>Screens &amp; LED walls</h3>
+            <div id="screenList"></div>
+            <div class="row wrap" style="margin-top:6px">
+              <button class="btn small" id="addScreen">+ Projector screen</button>
+              <button class="btn small" id="addLed">+ LED wall</button>
+            </div>
+            <p class="hint">Place your screens where they are in the room. They show the live ProPresenter slide, and lights whose beams would land on them turn red (or switch off; see Setup).</p>
+            <div id="screenWarn" class="err"></div>
+          </div>
+          <div class="box3d">
+            <h3>Stage size (metres)</h3>
+            <div class="row" id="stageSize">
+              <label class="mini3">Width <input type="number" step="0.5" data-k="w"></label>
+              <label class="mini3">Depth <input type="number" step="0.5" data-k="d"></label>
+              <label class="mini3">Height <input type="number" step="0.1" data-k="h"></label>
+            </div>
+            <p class="hint">Used for the simple stage block when no 3D model is loaded.</p>
+          </div>
+          <div class="box3d">
+            <h3>3D models</h3>
+            <div id="modelList"></div>
+            <p class="hint">GLB (glTF binary) works best: export it from SketchUp, Blender, Vectorworks or most 3D tools. An MVR file from a console or CAD program brings in the whole rig: lights, positions, DMX addresses and the stage.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="tab-setup" class="tab">
+    <div class="two-col">
+      <div class="panel">
+        <div class="panelhead"><h2>Output</h2></div>
+        <form id="setForm" class="form">
+          <label>Show name <input name="name"></label>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="artnet"> Art-Net</label></legend>
+            <label>Send to (IP) <input name="artnetTarget" placeholder="255.255.255.255 or 2.255.255.255 or a node's IP"></label>
+            <label>Universe 1 is sent as Art-Net
+              <select name="artnetBase"><option value="0">universe 0 (0:0:0) — most nodes</option><option value="1">universe 1</option></select></label>
+          </fieldset>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="sacn"> sACN (E1.31)</label></legend>
+            <label>Network interface <select name="sacnInterface" id="ifaceSelect"></select></label>
+            <label>Unicast IP (optional) <input name="sacnUnicast" placeholder="leave blank for multicast"></label>
+            <label>Priority <input name="sacnPriority" type="number" min="0" max="200"></label>
+          </fieldset>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="enttec"> USB-DMX interface (Enttec DMX USB Pro or compatible)</label></legend>
+            <div id="usbStatus" class="hint"></div>
+            <label>Device <input name="enttecPort" placeholder="Automatic (leave empty)"></label>
+            <label>Universe to send <input name="enttecUniverse" type="number" min="1"></label>
+            <p class="hint">Plug it in and tick the box: it is found automatically, and reconnects if it is unplugged. No driver is needed on a Mac (macOS has the FTDI driver built in); Windows installs it through Windows Update. Not supported: simple "Open DMX" cables and uDMX sticks. Use an Art-Net or sACN node for those.</p>
+          </fieldset>
+          <fieldset>
+            <legend>MIDI from Playback / Ableton</legend>
+            <div id="midiStatus" class="hint"></div>
+            <label>Listen on <select name="midiInput" id="midiInputSelect"></select></label>
+            <div class="row">
+              <label>MIDI channel <select name="midiChannel" id="midiChannelSelect"></select></label>
+              <label>First section note <input name="noteBase" type="number" min="0" max="127"></label>
+            </div>
+            <label class="check plain"><input type="checkbox" name="pcSelectsSong"> Program change n selects song n in the set list</label>
+            <label>Send to (MIDI out, for SuperRack / Ableton / MainStage) <select name="midiOutput" id="midiOutputSelect"></select></label>
+            <label class="check plain"><input type="checkbox" id="webMidi"> Use this browser's MIDI instead (Chrome/Edge on the lighting Mac)</label>
+            <p class="hint">By default, note <b id="noteBaseName">C1</b> (36) triggers a song's first section, the next note its second, and so on. Or use <b>Learn</b> in the song editor to map whatever your track app sends.</p>
+          </fieldset>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="oscEnabled"> OSC in (TouchOSC, Companion / Stream Deck, QLab…)</label></legend>
+            <label style="max-width:140px">UDP port <input name="oscPort" type="number" min="1024" max="65535"></label>
+            <div id="oscStatus" class="hint"></div>
+            <details class="oschelp"><summary>OSC addresses</summary>
+              <table class="tbl keys">
+                <tr><td><code>/sl/go</code> · <code>/sl/back</code></td><td>Cue list GO / back</td></tr>
+                <tr><td><code>/sl/next</code> · <code>/sl/prev</code></td><td>Next / previous song section</td></tr>
+                <tr><td><code>/sl/section "Chorus"</code> or <code>/sl/section/chorus</code></td><td>Go to a section of the current song (name or number)</td></tr>
+                <tr><td><code>/sl/song "Name"</code> · <code>/sl/song 3</code></td><td>Pick a song</td></tr>
+                <tr><td><code>/sl/look "Name"</code> · <code>/sl/cue 2</code></td><td>Show a look / go to a cue</td></tr>
+                <tr><td><code>/sl/scene "Pulpit" [0..1]</code></td><td>Toggle a scene, or set its level</td></tr>
+                <tr><td><code>/sl/pad 3 [1|0]</code> · <code>/sl/pad/q</code></td><td>Press / release a pad (number, key or name)</td></tr>
+                <tr><td><code>/sl/gm 0.8</code> · <code>/sl/blackout 1</code></td><td>Master level / blackout</td></tr>
+                <tr><td><code>/sl/strobe 1|0</code> · <code>/sl/flash 1|0</code></td><td>Strobe / flash all while 1</td></tr>
+                <tr><td><code>/sl/tap</code> · <code>/sl/bpm 120</code></td><td>Tempo</td></tr>
+                <tr><td><code>/sl/mode hybrid</code> · <code>/sl/hold 1</code> · <code>/sl/release</code></td><td>Follow mode, hold, release live changes</td></tr>
+                <tr><td><code>/sl/part "Sermon"</code></td><td>Switch the service part (Worship, Hosting, Sermon, Video…)</td></tr>
+                <tr><td><code>/sl/palette/primary "#ff8800"</code> (or r g b 0..1)</td><td>Change a palette colour for this song (until the song changes)</td></tr>
+                <tr><td><code>/sl/group/Back wash/level 0.5</code></td><td>Group fader</td></tr>
+                <tr><td><code>/sl/group/Back wash/color "secondary"</code></td><td>Group colour: primary / secondary / tertiary, "#rrggbb", r g b, or nothing to release</td></tr>
+                <tr><td><code>/sl/group/Back wash/fx "Chase"</code> · <code>/sl/group/Back wash/flash 1</code></td><td>Group effect (by name; nothing = off) / flash</td></tr>
+              </table>
+              <p class="hint">Buttons that send 1 on press and 0 on release work as expected. Any other OSC message can trigger a song section with <b>Learn</b> in the song editor.</p>
+            </details>
+          </fieldset>
+          <fieldset>
+            <legend>ProPresenter</legend>
+            <label class="check plain"><input type="checkbox" name="ppEnabled"> Follow ProPresenter</label>
+            <div class="row">
+              <label>Computer running ProPresenter (IP or name) <input name="ppHost" placeholder="e.g. 192.168.1.30 or localhost"></label>
+              <label style="max-width:110px">Port <input name="ppPort" type="number" min="1" max="65535"></label>
+            </div>
+            <div id="ppStatus" class="hint"></div>
+            <label class="check plain"><input type="checkbox" name="ppSections"> Slide groups (Verse, Chorus…) change the lights</label>
+            <label class="check plain"><input type="checkbox" name="ppSongs"> A presentation picks the song with the same name</label>
+            <label>Light colour follows the screen
+              <select name="ppColorMode"><option value="off">Off</option><option value="group">ProPresenter group colour</option><option value="slide">Colour of the slide on screen</option></select></label>
+            <label>…and it changes
+              <select name="ppColorTarget"><option value="primary">the Primary colour (everything using Primary follows)</option><option value="groups">the live colour of these light groups:</option></select></label>
+            <div id="ppColorGroups" class="chips"></div>
+            <p class="hint">In ProPresenter: Settings → Network → tick <b>Enable Network</b> and note the port. Both computers must be on the same network (or use <code>localhost</code> on the same Mac). Colour sync sets the live colour of the groups ticked above (all groups if none).</p>
+          </fieldset>
+          <label>Lights pointing at screens
+            <select name="screenProtect"><option value="warn">Warn (red in the 3D view)</option><option value="block">Block: switch those lights off</option><option value="off">Ignore</option></select></label>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="tcEnabled"> Follow MIDI timecode (MTC)</label></legend>
+            <div id="tcStatus" class="hint">No timecode received.</div>
+            <p class="hint">Send MTC from Ableton, Playback, QLab or a video server to the MIDI input. Cues with a timecode go when it passes them; songs with a start timecode (Tracks tab) follow their section markers. Jumping around the timeline puts the right cue / section up.</p>
+          </fieldset>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="inputEnabled"> Input from another lighting desk</label></legend>
+            <div class="row">
+              <label>Listen for <select name="inputProtocol"><option value="artnet">Art-Net</option><option value="sacn">sACN</option></select></label>
+              <label>Mode <select name="inputMode"><option value="merge">Merge: highest level wins</option><option value="backup">Backup: pass the desk through, take over when it stops</option></select></label>
+            </div>
+            <div id="dmxInStatus" class="hint"></div>
+          </fieldset>
+          <label>Frames per second <input name="fps" type="number" min="10" max="44"></label>
+          <button class="btn primary">Save output settings</button>
+          <div id="outErr" class="err"></div>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="panelhead" id="testBox"><h2>Test</h2><button class="btn small" id="wizardBtn">Setup wizard…</button></div>
+        <p class="hint">Check everything before the service starts.</p>
+        <h3 class="sub">Inputs and outputs</h3>
+        <div id="testInputs" class="test-ins"></div>
+        <h3 class="sub">Lights</h3>
+        <div id="testLights"></div>
+        <h3 class="sub">Sound</h3>
+        <div id="testAudio"></div>
+        <div class="panelhead"><h2>Service parts</h2><button class="btn small" id="partAdd">+ Part</button></div>
+        <p class="hint">Worship, hosting, the sermon and videos each get their own lighting. A part can show a look, dim everything (Video: almost blackout), and decide whether songs and screen colours change the lights.</p>
+        <label class="check plain part-opt"><input type="checkbox" id="ppVideoPart"> Videos in ProPresenter switch to the <b>Video</b> part while they play</label>
+        <label class="check plain part-opt"><input type="checkbox" id="ppAutoParts"> ProPresenter presentations pick the part: a song → Worship; names with the words below → that part</label>
+        <div id="partsBox" class="parts-edit"></div>
+        <div class="panelhead"><h2>Show file</h2></div>
+        <p class="hint" id="dataDir"></p>
+        <div class="row wrap">
+          <a class="btn" href="/api/export">Download backup</a>
+          <label class="btn">Load show file…<input type="file" id="importFile" accept=".json,application/json" hidden></label>
+          <button class="btn warn" id="newShow">New empty show</button>
+          <button class="btn" id="demoShow">Load demo</button>
+        </div>
+        <div class="panelhead"><h2>Snapshots</h2><div class="row"><button class="btn small" id="snapSave">Save snapshot</button><button class="btn small" id="snapRefresh">Show list</button></div></div>
+        <p class="hint">The show is saved automatically every few minutes while you change it, and at every start. Restore an earlier version here (you can undo a restore).</p>
+        <div id="snapList"></div>
+        <div class="panelhead"><h2>Updates</h2></div>
+        <div id="updateBox"></div>
+        <div class="panelhead"><h2>Access (PINs)</h2></div>
+        <div id="accessBox"></div>
+        <div class="panelhead"><h2>Safety</h2></div>
+        <label class="form" style="display:block">Safe look for the <b>Panic</b> button <select id="safeLook"></select></label>
+        <p class="hint">Panic (hold 1 s) stops strobes, effects and every live change, sets the master to full and fades to this look. Choose your normal worship lighting.</p>
+        <div class="panelhead"><h2>DMX monitor</h2><select id="monUniverse"></select></div>
+        <div id="dmxMon" class="dmx"></div>
+        <div class="panelhead"><h2>Open on iPad / phone</h2></div>
+        <div id="urls" class="hint"></div>
+      </div>
+    </div>
+  </section>
+  <!-- HELP -->
+  <section id="tab-help" class="tab">
+    <div class="help-grid">
+      <div class="panel help-side">
+        <input id="helpSearch" type="search" placeholder="Search the guides…" aria-label="Search the guides">
+        <div id="helpList"></div>
+        <div class="help-tools"><button class="btn small" id="helpBack" title="Back to the screen you came from">← Back</button><button class="btn small" id="helpPrint" title="Print this guide (e.g. the volunteer card)">Print</button></div>
+      </div>
+      <div class="panel"><article id="helpArticle" class="help-article"></article></div>
+    </div>
+  </section>
+</main>
+
+<footer class="masters">
+  <div class="gm">
+    <span>Master</span>
+    <input type="range" id="gm" min="0" max="1000" value="1000">
+    <b id="gmVal">100%</b>
+  </div>
+  <div class="palbar" id="palBar" title="Primary / secondary / tertiary colours (each song can have its own)"></div>
+  <button id="progBadge" class="btn small badge" hidden></button>
+  <button id="strobeBtn" class="btn hot" title="Hold to strobe everything (key S)">Strobe <kbd>S</kbd></button>
+  <button id="flashBtn" class="btn hot" title="Hold for everything at full (key F)">Flash <kbd>F</kbd></button>
+  <button id="helpBtn" class="btn small" title="Help for this screen (the ? key lists the keyboard shortcuts)">?</button>
+  <button id="panicBtn" class="btn panic" title="Hold for 1 second: stop all effects and live changes, go to the safe look">Panic</button>
+  <button id="blackout" class="btn bo">Blackout</button>
+</footer>
+
+<div id="toast" class="toast" hidden></div>
+<div id="login" class="login" hidden>
+  <div class="pinpad">
+    <div class="logo big"></div>
+    <h2>Sanctuary Lights</h2>
+    <p id="loginMsg">Enter your PIN</p>
+    <div id="pinDots" class="pindots">—</div>
+    <div class="keys"></div>
+  </div>
+</div>
+<dialog id="padDialog" class="wide">
+  <form method="dialog" class="form" id="padForm">
+    <h3 id="padDlgTitle">Pad</h3>
+    <input type="hidden" name="id">
+    <div class="row">
+      <label>Name <input name="name" maxlength="24" required></label>
+      <label style="max-width:90px">Key <input name="key" maxlength="1" placeholder="—"></label>
+    </div>
+    <div class="row">
+      <label>Does <select name="kind"><option value="effect">Run an effect</option><option value="preset">Apply a preset</option><option value="flash">Flash to full</option></select></label>
+      <label>On <select name="groupId" id="padGroup"></select></label>
+    </div>
+    <div class="row">
+      <label class="pk-effect">Effect <select name="effectId" id="padEffect"></select></label>
+      <label class="pk-preset">Preset <select name="presetId" id="padPreset"></select></label>
+      <label class="pk-effect" style="max-width:90px">Speed <select name="rate"><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    </div>
+    <label>Button <select name="mode"><option value="toggle">Toggle: tap on, tap off</option><option value="hold">Hold: only while pressed</option></select></label>
+    <p class="hint">Keys: any letter or number except Space, T, S, F, B, R and ?.</p>
+    <div class="row" style="justify-content:flex-end"><button value="cancel" class="btn" formnovalidate>Cancel</button><button value="ok" class="btn primary">Save pad</button></div>
+  </form>
+</dialog>
+<dialog id="helpDialog" class="wide">
+  <form method="dialog">
+    <h3>Keyboard shortcuts</h3>
+    <table class="tbl keys">
+      <tr><td><kbd>Space</kbd></td><td>GO (Live tab) / next section (Songs tab)</td></tr>
+      <tr><td><kbd>←</kbd></td><td>Back / previous section</td></tr>
+      <tr><td><kbd>S</kbd> hold</td><td>Strobe everything</td></tr>
+      <tr><td><kbd>F</kbd> hold</td><td>Flash everything to full</td></tr>
+      <tr><td><kbd>B</kbd></td><td>Blackout on/off</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Tap tempo</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Release all live changes (pads, effects, live colours)</td></tr>
+      <tr><td><kbd>1</kbd>…<kbd>0</kbd> and others</td><td>Pads (shown on each pad)</td></tr>
+      <tr><td><kbd>?</kbd></td><td>This list</td></tr>
+    </table>
+    <p class="hint">Shortcuts work on every tab, except while typing in a box.</p>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn" id="helpFull">Open the guides</button><button value="ok" class="btn primary">Close</button></div>
+  </form>
+</dialog>
+<dialog id="fixtureDialog" class="wide">
+  <form method="dialog">
+    <h3>Import fixture types</h3>
+    <p class="hint">Tick the modes your lights are set to (the mode is on the light's menu / manual).</p>
+    <div id="fixtureList" class="fixlist"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary">Import</button></div>
+  </form>
+</dialog>
+<dialog id="mvrDialog" class="wide">
+  <form method="dialog">
+    <h3>Import MVR</h3>
+    <p class="hint" id="mvrSummary"></p>
+    <p class="hint">Choose the fixture type (DMX channel layout) to use for each kind of light in the file:</p>
+    <table class="tbl"><thead><tr><th>In the file</th><th>Lights</th><th>Use type</th></tr></thead><tbody id="mvrTypes"></tbody></table>
+    <label class="check plain"><input type="checkbox" id="mvrReplace" checked> Replace the lights that are patched now</label>
+    <label class="check plain"><input type="checkbox" id="mvrModels" checked> Use the stage geometry from the file</label>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary">Import</button></div>
+  </form>
+</dialog>
+<dialog id="wizard" class="wide wizard">
+  <div class="wz-steps"></div>
+  <div class="wz-body"></div>
+  <div class="row wz-nav">
+    <button type="button" class="btn small wz-skip">Skip setup</button>
+    <span class="grow"></span>
+    <button type="button" class="btn wz-back">Back</button>
+    <button type="button" class="btn primary wz-next">Next</button>
+  </div>
+</dialog>
+<dialog id="partDialog" class="wide wizard">
+  <div class="wz-body">
+    <h2>Add a service part</h2>
+    <p class="hint">Pick one to start from. You can rename it and change everything later in Setup → Service parts.</p>
+    <div class="wz-cards" id="partTemplates"></div>
+  </div>
+  <div class="row wz-nav"><span class="grow"></span><button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button></div>
+</dialog>
+<dialog id="prompt"><form method="dialog"><h3 id="promptTitle"></h3><input id="promptInput"><div class="row"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary" id="promptOk">OK</button></div></form></dialog>
+<script src="fxmath.js"></script>
+<script src="geom.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

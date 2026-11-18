@@ -1,0 +1,49 @@
+/* HELP: the built-in guides */
+.help-grid { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px; align-items: start; }
+.help-side { position: sticky; top: 0; display: flex; flex-direction: column; gap: 8px; }
+.help-side input { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; color: var(--text); width: 100%; }
+#helpList { display: flex; flex-direction: column; gap: 2px; }
+.help-item { text-align: left; background: none; border: 0; color: var(--muted); padding: 8px 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+.help-item:hover { background: var(--panel2); color: var(--text); }
+.help-item.on { background: var(--panel2); color: var(--text); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+.help-item.gap { margin-top: 10px; }
+.help-item.res b { color: var(--text); }
+.help-item.res small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.help-tools { display: flex; gap: 6px; }
+.help-article { max-width: 860px; padding: 8px 28px 40px; line-height: 1.6; font-size: 15px; }
+.help-article h1 { font-size: 28px; margin: 6px 0 14px; letter-spacing: 0; text-transform: none; color: var(--text); }
+.help-article h2 { font-size: 20px; margin: 28px 0 8px; letter-spacing: 0; text-transform: none; color: var(--text); padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.help-article h3 { font-size: 16px; margin: 20px 0 6px; color: var(--text); text-transform: none; letter-spacing: 0; }
+.help-article p, .help-article li { color: #cfd4de; }
+.help-article ul, .help-article ol { padding-left: 22px; }
+.help-article li { margin: 3px 0; }
+.help-article a { color: #7fb4ff; }
+.help-article code { background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font-size: 13px; }
+.help-article pre { background: #0b0d12; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.help-article pre code { border: 0; padding: 0; background: none; }
+.help-article table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 14px; }
+.help-article th, .help-article td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+.help-article th { background: var(--panel2); color: var(--text); }
+.help-article blockquote { margin: 14px 0; padding: 4px 14px; border-left: 3px solid var(--accent); background: #1a1810; border-radius: 0 8px 8px 0; }
+.help-article blockquote p { margin: 6px 0; }
+.help-article hr { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
+@media (max-width: 800px) {
+  .help-grid { grid-template-columns: 1fr; }
+  .help-side { position: static; }
+  #helpList { flex-direction: row; flex-wrap: wrap; }
+  .help-item.gap { margin-top: 0; }
+  .help-article { padding: 4px 6px 30px; }
+}
+/* Printing a guide (e.g. the volunteer card): only the guide, black on white */
+@media print {
+  body { background: #fff !important; }
+  header, nav, footer, .masters, .partbar, .help-side, #toast, .updbanner { display: none !important; }
+  main > section:not(#tab-help) { display: none !important; }
+  html, body, main, #tab-help, .help-grid, .help-grid > .panel, .help-article { display: block !important; height: auto !important; max-height: none !important; overflow: visible !important; position: static !important; border: 0 !important; background: #fff !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+  .help-grid > .help-side { display: none !important; }
+  .help-article, .help-article p, .help-article li, .help-article h1, .help-article h2, .help-article h3, .help-article td, .help-article th { color: #000 !important; }
+  .help-article th { background: #eee !important; }
+  .help-article th, .help-article td { border-color: #999 !important; }
+  .help-article blockquote { background: #f4f4f4 !important; }
+  .help-article code { background: #f0f0f0 !important; border-color: #ccc !important; }
+}

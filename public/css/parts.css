@@ -1,0 +1,24 @@
+/* SERVICE PARTS: the part bar and the Setup editor */
+.partbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.partbar .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin-right: 4px; }
+.partbar .btn { padding: 8px 16px; font-weight: 600; }
+.partbar .btn.on { background: #1f3a5c; border-color: #4a8fe0; color: #fff; }
+.partbar .btn.video.on { background: #3a2a10; border-color: var(--accent); color: var(--accent); }
+.partbar .why { color: var(--muted); font-size: 12px; margin-left: auto; }
+.partbar.big .btn { padding: 14px 22px; font-size: 18px; flex: 1; }
+.partbar.big .why { flex-basis: 100%; margin: 0; }
+.parts-edit { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 4px; }
+.part-row { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #12151c; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.part-row.cur { border-color: #4a8fe0; }
+.part-row .row { gap: 8px; align-items: center; }
+.part-row .grow { flex: 1; }
+.part-row .pname { font-weight: 700; background: none; border: 1px solid transparent; color: var(--text); border-radius: 6px; padding: 3px 6px; font-size: 14px; width: 160px; }
+.part-row .pname:focus { border-color: var(--line); background: var(--panel2); }
+.part-row select, .part-row input:not([type=checkbox]):not([type=range]):not(.pname) { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px; color: var(--text); }
+.part-row .mini { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.part-row .mini.wide input { flex: 1; }
+.part-row .tag { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: 1px 8px; }
+.part-opt { display: block; margin: 4px 0; }
+.partbar .btn.add { padding: 8px 12px; color: var(--muted); border-style: dashed; }
+.wz-card.have { opacity: .6; }
+.wz-card small { color: var(--muted); font-weight: 400; }
