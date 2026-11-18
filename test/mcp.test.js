@@ -102,6 +102,12 @@ test('tools: overview, light a song, compose a look, parts, and undo', async () 
     assert.match(r.text, /Undone/);
     assert.strictEqual(t.app.engine.show.parts.length, before - 1, 'the Baptism part is undone');
 
+    // Practice from the assistant
+    await t.call('practice', { on: true });
+    assert.ok(t.app.engine.rt.practice);
+    await t.call('practice', { on: false });
+    assert.strictEqual(t.app.engine.rt.practice, null);
+
     // run_action for the rest
     r = await t.call('run_action', { type: 'tempo.set', params: { bpm: 72 } });
     assert.strictEqual(t.app.engine.rt.bpm, 72);
@@ -145,6 +151,36 @@ test('stdio bridge (Claude Desktop) forwards messages', async () => {
     assert.ok(JSON.parse(lines[1]).result.tools.length > 10);
   } finally {
     child.kill();
+    t.done();
+  }
+});
+
+test('see_stage: a picture (2D plan without an app window, 3D from a window) and a summary', async () => {
+  const t = await start();
+  t.app.mcp.configure({ enabled: true });
+  try {
+    const song = t.app.engine.show.songs.find((s) => s.name === 'Graves Into Gardens');
+    t.app.run({ type: 'song.select', id: song.id });
+    t.app.run({ type: 'section.go', songId: song.id, id: song.sections.find((s) => s.name === 'Bridge 3').id });
+    // No window answers: the 2D plan
+    const r = (await t.rpc('tools/call', { name: 'see_stage', arguments: {} })).body.result;
+    assert.strictEqual(r.content[0].type, 'image');
+    assert.strictEqual(r.content[0].mimeType, 'image/png');
+    assert.strictEqual(Buffer.from(r.content[0].data, 'base64').subarray(1, 4).toString(), 'PNG');
+    assert.match(r.content[1].text, /2D plan/);
+    assert.match(r.content[1].text, /Bridge 3/);
+    assert.match(r.content[1].text, /Front \(4\): \d+% average/);
+    // A window answers with a 3D render
+    const orig = t.app.hub.broadcast.bind(t.app.hub);
+    t.app.hub.broadcast = (ev, data) => {
+      if (ev === 'snapshot') setTimeout(() => fetch(t.url.replace('/mcp', `/api/snapshot?id=${data.id}`), { method: 'POST', body: 'data:image/jpeg;base64,/9j/AAAA' }), 50);
+      return orig(ev, data);
+    };
+    const r3 = (await t.rpc('tools/call', { name: 'see_stage', arguments: { view: 'foh' } })).body.result;
+    assert.strictEqual(r3.content[0].mimeType, 'image/jpeg');
+    assert.strictEqual(r3.content[0].data, '/9j/AAAA');
+    assert.match(r3.content[1].text, /3D view \(foh\)/);
+  } finally {
     t.done();
   }
 });

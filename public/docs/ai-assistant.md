@@ -23,6 +23,10 @@ Examples:
 - **Everything it changes appears on every screen straight away, and Undo reverses it** (↶ at the top), one step at a time, like a button press.
 - During a service, **Panic** works as always.
 
+## Let Claude try things safely
+
+Turn on **Practice** (top right) first. The real lights stay as they are while Claude builds and shows looks. With **see_stage** it can look at the result and adjust it ("the back wash is too purple"). When you like it, choose **Send this to the lights**, or **Back to the real stage** to throw the experiment away.
+
 ## Connect Claude Desktop
 
 1. In Sanctuary Lights: **Setup → AI assistant (MCP)** → tick *Allow an AI assistant to connect*.
@@ -45,6 +49,7 @@ Copy the `claude mcp add …` line from Setup and run it in a terminal. Claude C
 | Tool | Does |
 |---|---|
 | get_overview | The lights (by role and group), service parts, set list and library, looks, effects, and what's on stage now |
+| see_stage | A picture of the stage: the 3D view from an open Sanctuary Lights window (or a 2D plan if none is open), plus a summary per group, so Claude can check its own work |
 | get_song | A song's sections, looks, colours, key and BPM |
 | add_song / arrange_song | Add a song with its sections, or change their order (lighting is kept) |
 | light_song | *Light this song for me* |
@@ -55,6 +60,7 @@ Copy the `claude mcp add …` line from Setup and run it in a terminal. Claude C
 | set_part / save_part | Switch the service part; create or change one |
 | set_master | Master level and blackout |
 | add_schedule | A weekly scheduled change (admin) |
+| practice | Practice mode on / off (keep or throw away what was tried) |
 | panic / undo | As the buttons |
 | run_action | Anything else the app can do, for advanced use |
 

@@ -50,6 +50,28 @@ Useful buttons for a **Stream Deck with Bitfocus Companion** (use the *Generic O
 
 The full list is in **Setup → OSC addresses**. Any other OSC message can be **Learn**ed for a song section, like MIDI.
 
+## Hardware controller (Launchpad, APC mini, or any MIDI controller)
+
+Physical buttons are faster and safer than a touchscreen during a service. In **Setup → Hardware controller**, tick *Use a hardware controller*, choose the model and its MIDI port.
+
+The controller gets its own MIDI port, so its buttons never trigger song sections, even if the tracks' MIDI listens on all inputs.
+
+**Launchpad (Mini MK3, X, Pro MK3) and Akai APC mini mk2** get a ready-made layout on the 8 × 8 grid, top row first:
+
+| Row | Buttons |
+|---|---|
+| 8 | Service parts: Worship, Hosting, Sermon, Video… (green = on) |
+| 7, 6, 5 | Sections of the current song (in their look's colour; the current one pulses) |
+| 4, 3 | Pads 1–16 |
+| 2 | Set-list songs 1–8 |
+| 1 | ◀ section · section ▶ · next item · Flash (hold) · Strobe (hold) · Blackout · Panic (hold 1 s) · Tap tempo |
+
+On a Launchpad, Sanctuary Lights switches it to Programmer mode by itself.
+
+**Any other MIDI controller:** choose *Another MIDI controller*, tap **Learn** next to a function, and press a button. Buttons that send notes light up when their function is on (if the controller supports it).
+
+For a Stream Deck, use Bitfocus Companion with OSC (above).
+
 ## MIDI timecode (MTC)
 
 Tick **Follow MIDI timecode** and send MTC from Ableton, Playback, QLab or a video server to the MIDI input. Cues and songs with a timecode follow it. See [Songs](songs.md).

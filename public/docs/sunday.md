@@ -48,6 +48,24 @@ Usually you only switch the **service parts**, and the rest happens by itself:
 - Changes you made during the service are saved automatically. If you changed something by mistake, **Undo** (↶ at the top) or restore a **snapshot** in Setup. See [Safety](safety.md).
 - Turn the lights off at the end of the day, then the computer.
 
+## Practice mode: rehearse without touching the lights
+
+Tap **Practice** at the top right. The real lights freeze exactly as they are, and every screen shows a striped **PRACTICE MODE** banner. Everything you do is now a rehearsal:
+
+- tap through songs and sections
+- switch service parts
+- step through the service order
+- try pads and effects
+
+Watch the result in the 2D / 3D view. It's ideal for training volunteers midweek while the hall is in use, or for walking through Sunday's plan.
+
+To leave practice mode:
+
+- **Back to the real stage:** the screens go back to what the lights are doing, and nothing on stage changes.
+- **Send this to the lights:** what you practised goes to the real lights.
+
+Looks, songs and other programming you change while practising are saved as normal (and can be undone).
+
 ## Running it without a lighting person
 
 The [Volunteer screen](volunteer-card.md) has only the big buttons: NEXT / BACK, the song's sections, the Service bar, Flash, Strobe, Blackout and Panic. Give volunteers a **volunteer PIN** (Setup → Access) so the rest of the app is locked.
