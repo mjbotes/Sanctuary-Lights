@@ -28,6 +28,7 @@ import './updates.js';
 import './lighting.js';
 import './wizard.js';
 import './testpanel.js';
+import './parts.js';
 import { $, S, on } from './core.js';
 import { startSession } from './access.js';
 import { renderRuntime } from './live.js';

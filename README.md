@@ -189,6 +189,7 @@ Sanctuary Lights listens for OSC on **UDP port 8000** (change it in Setup → OS
 | `/sl/strobe 1/0`, `/sl/flash 1/0` | Strobe / flash everything while 1 |
 | `/sl/tap`, `/sl/bpm 120` | Tempo |
 | `/sl/mode hybrid`, `/sl/hold 1`, `/sl/release` | Follow mode, hold, release live changes |
+| `/sl/part "Sermon"` | Switch the service part (Worship, Hosting, Sermon, Video, or your own) |
 | `/sl/palette/primary "#ff8800"` (or r g b, 0–1) | Change a palette colour until the song changes |
 | `/sl/group/<group>/level 0.5` | Group fader |
 | `/sl/group/<group>/color "secondary"` | Group colour: primary / secondary / tertiary, `#rrggbb`, r g b, or no argument to release |
@@ -295,6 +296,39 @@ Sanctuary Lights follows ProPresenter 7 (version 7.9 or later) over the network:
 2. In Sanctuary Lights, go to **Setup → ProPresenter**, tick *Follow ProPresenter*, and enter the address of the computer running ProPresenter (`localhost` if it's the same Mac) and the port.
 
 The status line shows the connection and what the last slide did. Only group names and slide images are read; slide text is not used.
+
+## Service parts: worship, hosting, sermon, videos
+
+A service has parts that need different lighting. The **Service** bar on the Live, Songs and Volunteer screens switches between them with one tap:
+
+| Part | Out of the box |
+|---|---|
+| **Worship** | Songs (MIDI, track markers, ProPresenter groups, timecode) change the lights, and the lights follow the screen colours. |
+| **Hosting** | Its own look (e.g. warm white front light). Songs and screen colours don't change anything. |
+| **Sermon** | The same idea, with its own look. |
+| **Video** | Everything at **10%**, almost a blackout, while a video plays. |
+
+Set each part up in **Setup → Service parts**:
+
+- **Look:** what the stage looks like during that part. *Keep the song / cue lights* leaves the lights as they are.
+- **Brightness:** an overall level on top of the look. Video uses 10%.
+- **Fade:** how long the change takes.
+- **Songs change the lights:** when off, MIDI from the tracks, track markers, ProPresenter slide groups and timecode are ignored, so the lights stay put during the sermon. Tapping a song section yourself still works, and brings the worship lights back.
+- **Follow screen colours:** when off, ProPresenter colour sync is ignored. Switching to the part also drops the colour that came from the screen, so the sermon look shows its own colours.
+- **Presentations named:** words that pick this part from the ProPresenter presentation's name (e.g. *sermon, message, scripture*).
+- **+ Part** adds your own, e.g. *Communion* or *Prayer*.
+
+**Automatic with ProPresenter** (both can be switched off in Setup → Service parts):
+
+- **Videos:** when a video plays on the main screen, the lights switch to the Video part. When it ends (or is paused for a second), they go back to whatever part was on before, so a video during the sermon returns to the sermon lights. Audio-only items are ignored.
+- **Presentations:** when the operator moves to a new presentation:
+  - a song's presentation switches to Worship
+  - *Sermon notes* switches to Sermon
+  - *Welcome & announcements* switches to Hosting
+
+  The bar shows *Auto: …* with the reason.
+
+You can also switch by OSC: `/sl/part "Sermon"` (by name or number), for example from a Stream Deck with Companion. **Panic** always goes back to Worship at full brightness.
 
 ## Screens and LED walls in the 3D model
 

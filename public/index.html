@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="css/tricks.css">
 <link rel="stylesheet" href="css/tracks.css">
 <link rel="stylesheet" href="css/setup.css">
+<link rel="stylesheet" href="css/parts.css">
 <link rel="stylesheet" href="css/palette.css">
 <link rel="stylesheet" href="css/songs.css">
 <link rel="stylesheet" href="css/responsive.css">
@@ -51,11 +52,13 @@
 <main>
   <!-- VOLUNTEER -->
   <section id="tab-simple" class="tab">
+    <div class="partbar big"></div>
     <div class="panel simple" id="simpleBox"></div>
   </section>
 
   <!-- LIVE -->
   <section id="tab-live" class="tab on">
+    <div class="partbar"></div>
     <div class="live-grid">
       <div class="panel cuepanel">
         <div class="now">
@@ -86,6 +89,7 @@
 
   <!-- SONGS -->
   <section id="tab-songs" class="tab">
+    <div class="partbar"></div>
     <div class="songs-grid">
       <div class="panel">
         <div class="panelhead"><h2>Set list</h2><button class="btn small" id="addSong">+ Song</button></div>
@@ -432,6 +436,7 @@
                 <tr><td><code>/sl/strobe 1|0</code> · <code>/sl/flash 1|0</code></td><td>Strobe / flash all while 1</td></tr>
                 <tr><td><code>/sl/tap</code> · <code>/sl/bpm 120</code></td><td>Tempo</td></tr>
                 <tr><td><code>/sl/mode hybrid</code> · <code>/sl/hold 1</code> · <code>/sl/release</code></td><td>Follow mode, hold, release live changes</td></tr>
+                <tr><td><code>/sl/part "Sermon"</code></td><td>Switch the service part (Worship, Hosting, Sermon, Video…)</td></tr>
                 <tr><td><code>/sl/palette/primary "#ff8800"</code> (or r g b 0..1)</td><td>Change a palette colour for this song (until the song changes)</td></tr>
                 <tr><td><code>/sl/group/Back wash/level 0.5</code></td><td>Group fader</td></tr>
                 <tr><td><code>/sl/group/Back wash/color "secondary"</code></td><td>Group colour: primary / secondary / tertiary, "#rrggbb", r g b, or nothing to release</td></tr>
@@ -486,6 +491,11 @@
         <div id="testLights"></div>
         <h3 class="sub">Sound</h3>
         <div id="testAudio"></div>
+        <div class="panelhead"><h2>Service parts</h2><button class="btn small" id="partAdd">+ Part</button></div>
+        <p class="hint">Worship, hosting, the sermon and videos each get their own lighting. A part can show a look, dim everything (Video: almost blackout), and decide whether songs and screen colours change the lights.</p>
+        <label class="check plain part-opt"><input type="checkbox" id="ppVideoPart"> Videos in ProPresenter switch to the <b>Video</b> part while they play</label>
+        <label class="check plain part-opt"><input type="checkbox" id="ppAutoParts"> ProPresenter presentations pick the part: a song → Worship; names with the words below → that part</label>
+        <div id="partsBox" class="parts-edit"></div>
         <div class="panelhead"><h2>Show file</h2></div>
         <p class="hint" id="dataDir"></p>
         <div class="row wrap">
