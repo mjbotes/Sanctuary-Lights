@@ -42,6 +42,8 @@
 .strip .nm:focus { border-color: var(--line); background: var(--panel); }
 .strip .fader { display: flex; gap: 6px; align-items: stretch; height: 150px; justify-content: center; }
 .strip .fader input[type=range] { writing-mode: vertical-lr; direction: rtl; width: 34px; height: 150px; }
+/* Older Safari (iPad) has no vertical writing-mode for sliders */
+@supports not (writing-mode: vertical-lr) { .strip .fader input[type=range] { -webkit-appearance: slider-vertical; } }
 .strip .meter { width: 8px; background: #0b0d12; border-radius: 4px; position: relative; overflow: hidden; }
 .strip .meter i { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#e05050, #f2b33d 25%, #3fd27a 50%); }
 .strip .db { text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }

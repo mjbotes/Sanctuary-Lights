@@ -2,12 +2,12 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const http = require('http');
-const { ProPresenter, parsePresentation } = require('../lib/propresenter');
+const { ProPresenter, parsePresentation, jsonSplitter } = require('../lib/propresenter');
 const { Engine, emptyShow } = require('../lib/engine');
 
 // A pretend ProPresenter with one presentation: Intro (1 slide), Verse 1 (2), Chorus (2), Verse 2 (2)
-function mockPro() {
-  const state = { index: 0 };
+function mockPro({ stream = false } = {}) {
+  const state = { index: 0, streams: [] };
   const pres = {
     presentation: {
       id: { uuid: 'P-1', name: 'Morning Song', index: 0 },
@@ -23,6 +23,12 @@ function mockPro() {
     if (req.url === '/v1/presentation/slide_index') {
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify({ presentation_index: { index: state.index, presentation_id: { uuid: 'P-1', name: 'Morning Song', index: 0 } } }));
+    }
+    if (stream && req.method === 'POST' && req.url === '/v1/status/updates') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.write(JSON.stringify({ url: 'presentation/slide_index', data: { presentation_index: { index: state.index, presentation_id: { uuid: 'P-1', name: 'Morning Song' } } } }) + '\r\n\r\n');
+      state.streams.push(res);
+      return;
     }
     if (req.url === '/v1/presentation/active') return res.end(JSON.stringify(pres));
     if (req.url.startsWith('/v1/presentation/P-1/thumbnail/')) {
@@ -142,4 +148,35 @@ test('import a song from the live presentation', () => {
   e.dispatch({ type: 'pp.importSong' });
   assert.deepStrictEqual(e.show.songs[0].sections.map((s) => s.name), ['Intro', 'Verse 1', 'Chorus', 'Verse 2']);
   assert.strictEqual(e.show.songs[0].sections[2].lookId, e.show.looks.find((l) => l.name === 'Chorus').id);
+});
+
+test('splits a stream of JSON objects, whatever the chunk boundaries', () => {
+  const got = [];
+  const split = jsonSplitter((o) => got.push(o));
+  const text = '{"url":"a","data":{"s":"x}{\\"y"}}\r\n\r\n{"url":"b","data":[1,2]}\n';
+  for (const ch of text) split(ch);
+  assert.deepStrictEqual(got, [{ url: 'a', data: { s: 'x}{"y' } }, { url: 'b', data: [1, 2] }]);
+});
+
+test('slide changes arrive over the streaming connection straight away', async () => {
+  const mock = await mockPro({ stream: true });
+  const pp = new ProPresenter({ warn() {} });
+  try {
+    let s = nextSlide(pp);
+    pp.configure({ enabled: true, host: '127.0.0.1', port: mock.port });
+    await s;
+    for (let i = 0; i < 50 && !pp.state.streaming; i++) await new Promise((ok) => setTimeout(ok, 20));
+    assert.strictEqual(pp.state.streaming, true);
+    // Only the stream knows about the new slide (polling would still say slide 0)
+    s = nextSlide(pp);
+    const t0 = Date.now();
+    for (const res of mock.state.streams) res.write(JSON.stringify({ url: 'presentation/slide_index', data: { presentation_index: { index: 5, presentation_id: { uuid: 'P-1', name: 'Morning Song' } } } }) + '\r\n\r\n');
+    const slide = await s;
+    assert.strictEqual(slide.group.name, 'Verse 2');
+    assert.ok(Date.now() - t0 < 200, `took ${Date.now() - t0} ms`);
+  } finally {
+    pp.close();
+    for (const res of mock.state.streams) res.end();
+    mock.server.close();
+  }
 });

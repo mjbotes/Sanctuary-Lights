@@ -135,6 +135,14 @@ function connect() {
   });
   es.onopen = () => $('#conn').classList.remove('off');
   es.onerror = () => $('#conn').classList.add('off');
+  // iPads and phones close the connection while asleep: reconnect when the screen comes back.
+  if (!S.watchConn) {
+    S.watchConn = true;
+    const check = () => { if (S.es && S.es.readyState === 2 && !document.hidden) connect(); };
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('pageshow', check);
+    setInterval(check, 5000);
+  }
 }
 
 // ----- helpers ----------------------------------------------------------

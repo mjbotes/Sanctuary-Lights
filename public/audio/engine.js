@@ -67,7 +67,10 @@ export class AudioEngine {
 
   async init() {
     if (this.ctx) return;
-    this.ctx = new AudioContext({ latencyHint: 'interactive' });
+    const AC = window.AudioContext || window.webkitAudioContext; // older iPads
+    if (!AC) throw new Error('This browser cannot play audio');
+    this.ctx = new AC({ latencyHint: 'interactive' });
+    if (!this.ctx.audioWorklet) throw new Error('This browser is too old for the audio engine (update Safari, or use Chrome)');
     await this.ctx.audioWorklet.addModule('/audio/autotune-worklet.js');
     this.pool = new WorkerPool(Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1)));
     this.setupOutputs();
@@ -591,6 +594,28 @@ export class AudioEngine {
     voc.dlySend.gain.setTargetAtTime(v.delay * 0.5, t, 0.02);
     voc.fb.gain.setTargetAtTime(0.35, t, 0.02);
     voc.delay.delayTime.setTargetAtTime(Math.min(4, (60 / (bpm || 120)) * (v.fx.delayBeats || 0.75)), t, 0.05);
+  }
+
+  // Test tone on one output pair: 1 kHz at -18 dB, left, then right, then both.
+  testTone(pair) {
+    const strip = this.makeStrip();
+    this.route(strip, pair);
+    const t = this.ctx.currentTime + 0.02;
+    const osc = new OscillatorNode(this.ctx, { frequency: 1000 });
+    const env = this.ctx.createGain();
+    env.gain.value = 0;
+    osc.connect(env).connect(strip.input);
+    const lvl = dbToGain(-18);
+    [[-1, 0], [1, 0.6], [0, 1.2]].forEach(([pan, at]) => {
+      strip.pan.pan.setValueAtTime(pan, t + at);
+      env.gain.setValueAtTime(0, t + at);
+      env.gain.linearRampToValueAtTime(lvl, t + at + 0.01);
+      env.gain.setValueAtTime(lvl, t + at + 0.45);
+      env.gain.linearRampToValueAtTime(0, t + at + 0.46);
+    });
+    osc.start(t);
+    osc.stop(t + 1.8);
+    osc.onended = () => { try { strip.splitter.disconnect(); } catch {} };
   }
 
   impulse(sec) {

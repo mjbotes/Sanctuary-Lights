@@ -134,3 +134,34 @@ test('packet formats', () => {
   const p = enttecProPacket(data);
   assert.deepStrictEqual([p[0], p[1], p[2], p[3], p[4], p[5], p.at(-1)], [0x7e, 6, 0x01, 0x02, 0, 255, 0xe7]);
 });
+
+test('identify blinks the chosen lights white at full, even in blackout', () => {
+  const { Engine, emptyShow } = require('../lib/engine');
+  const show = emptyShow();
+  show.fixtures = [
+    { id: 'a', name: 'A', profile: 'rgb', universe: 1, address: 1, x: 0.3, y: 0.5 },
+    { id: 'b', name: 'B', profile: 'rgb', universe: 1, address: 10, x: 0.6, y: 0.5 },
+  ];
+  const e = new Engine(show);
+  e.dispatch({ type: 'blackout.set', on: true });
+  e.dispatch({ type: 'fixture.identify', fixtures: ['a'] });
+  const t = Math.floor(Date.now() / 700) * 700 + 10; // a moment when the blink is on
+  const dmx = e.render(e.computeLook(t)).get(1);
+  assert.ok(dmx[0] > 250 && dmx[1] > 250 && dmx[2] > 250, `light A is white: ${[...dmx.slice(0, 3)]}`);
+  assert.deepStrictEqual([...dmx.slice(9, 12)], [0, 0, 0], 'light B stays in blackout');
+  e.dispatch({ type: 'fixture.identify', on: false });
+  assert.strictEqual(e.render(e.computeLook(t)).get(1)[0], 0);
+});
+
+test('new empty show and demo show keep the output settings', () => {
+  const { Engine, emptyShow } = require('../lib/engine');
+  const e = new Engine(emptyShow());
+  e.dispatch({ type: 'settings.update', settings: { artnetTarget: '2.0.0.9', setupDone: true } });
+  e.dispatch({ type: 'show.new', demo: true });
+  assert.ok(e.show.fixtures.length > 0);
+  assert.strictEqual(e.show.settings.artnetTarget, '2.0.0.9');
+  e.dispatch({ type: 'show.new' });
+  assert.strictEqual(e.show.fixtures.length, 0);
+  assert.strictEqual(e.show.settings.artnetTarget, '2.0.0.9');
+  assert.strictEqual(e.show.settings.setupDone, false);
+});

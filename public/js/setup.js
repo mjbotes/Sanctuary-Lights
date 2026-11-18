@@ -142,3 +142,6 @@ function renderUsbStatus() {
   el.textContent = `● ${u.message}`;
 }
 on('state', renderUsbStatus);
+
+// Browsers without Web MIDI (Safari on iPad / Mac): hide the option instead of letting it fail
+if (!navigator.requestMIDIAccess && $('#webMidi')) $('#webMidi').closest('label').hidden = true;

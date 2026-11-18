@@ -12,7 +12,7 @@ function renderPpStatus() {
   const live = S.runtime.pp;
   if (!pp.enabled) { el.textContent = 'Off.'; return; }
   el.replaceChildren(
-    c && c.connected ? h('span', { style: { color: 'var(--go-hi)' } }, '● Connected') : h('span', { style: { color: '#ff8a80' } }, `● Not connected${c && c.error ? `: ${c.error}` : ''}`),
+    c && c.connected ? h('span', { style: { color: 'var(--go-hi)' }, title: c.streaming ? 'Slide changes arrive instantly' : 'Checking for slide changes several times a second (older ProPresenter)' }, c.streaming ? '● Connected (live updates)' : '● Connected') : h('span', { style: { color: '#ff8a80' } }, `● Not connected${c && c.error ? `: ${c.error}` : ''}`),
     live && live.presentation ? ` · ${live.presentation.name}${live.group ? ` · ${live.group}` : ''}${live.result ? ` → ${live.result}` : ''}` : '',
     live && live.presentation ? h('button', { type: 'button', className: 'btn small', style: { marginLeft: '8px' }, title: 'Make a song with this name and one section per group', onclick: () => act('pp.importSong').then((r) => r && toast(`Song "${live.presentation.name}" ready. Pick looks for its sections on the Songs tab.`)) }, 'Make song from this presentation') : null);
 }
