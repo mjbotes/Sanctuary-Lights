@@ -55,6 +55,7 @@
   <!-- VOLUNTEER -->
   <section id="tab-simple" class="tab">
     <div class="partbar big"></div>
+    <div class="panel orderbox big" hidden></div>
     <div class="panel simple" id="simpleBox"></div>
   </section>
 
@@ -96,6 +97,9 @@
       <div class="panel">
         <div class="panelhead"><h2>Set list</h2><div class="row"><button class="btn small" id="addDemoSong" title="Add the demo song Graves Into Gardens, with a full lighting design">+ Demo song</button><button class="btn small" id="addSong">+ Song</button></div></div>
         <div id="songList" class="cuelist"></div>
+        <div class="row" style="margin-top:6px"><label class="btn small" title="Import a song design shared from another church or campus (.slsong.json)">Import song…<input type="file" id="importSongFile" accept=".json,application/json" hidden></label></div>
+        <div class="panelhead"><h2>Service order</h2></div>
+        <div class="orderbox"></div>
       </div>
       <div class="panel">
         <div class="songhead">
@@ -142,6 +146,7 @@
           <div class="chips" id="quickSections"></div>
           <table class="tbl"><thead><tr><th>Section</th><th>Look</th><th>Fade</th><th>MIDI trigger</th><th></th></tr></thead><tbody id="sectionTable"></tbody></table>
           <div class="row wrap" style="margin-top:12px">
+            <button class="btn" id="exportSong" title="Save this song and its looks as a file to share with another church or campus">Export song…</button>
             <button class="btn warn" id="deleteSong">Delete song</button>
           </div>
         </div>
@@ -497,6 +502,10 @@
         <div id="testLights"></div>
         <h3 class="sub">Sound</h3>
         <div id="testAudio"></div>
+        <div class="panelhead"><h2>Planning Center</h2></div>
+        <div id="pcoBox"><p class="hint">Open this tab again to load.</p></div>
+        <div class="panelhead"><h2>Schedule</h2><button class="btn small" id="scheduleAdd">+ Add</button></div>
+        <div id="scheduleBox"></div>
         <div class="panelhead"><h2>Service parts</h2><button class="btn small" id="partAdd">+ Part</button></div>
         <p class="hint">Worship, hosting, the sermon and videos each get their own lighting. A part can show a look, dim everything (Video: almost blackout), and decide whether songs and screen colours change the lights.</p>
         <label class="check plain part-opt"><input type="checkbox" id="ppVideoPart"> Videos in ProPresenter switch to the <b>Video</b> part while they play</label>

@@ -23,3 +23,33 @@
 .wz-card.have { opacity: .6; }
 .wz-card small { color: var(--muted); font-weight: 400; }
 .lookgroup { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+
+/* Service order */
+.orderbox { display: flex; flex-direction: column; gap: 6px; }
+.orderbox.big { margin-bottom: 10px; }
+.order-head { display: flex; align-items: center; gap: 8px; }
+.order-head small { color: var(--muted); }
+.order-head .grow { flex: 1; }
+.order-list { display: flex; flex-direction: column; gap: 3px; max-height: 360px; overflow: auto; }
+.orderbox.big .order-list { flex-direction: row; flex-wrap: wrap; max-height: none; }
+.order-header { margin: 8px 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.order-item { display: flex; align-items: center; gap: 8px; text-align: left; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; color: var(--text); cursor: pointer; font: inherit; font-size: 13px; }
+.orderbox.big .order-item { padding: 12px 14px; font-size: 15px; }
+.order-item .tag { min-width: 18px; font-size: 11px; color: var(--accent); }
+.order-item.song .tag { color: #7fe0a6; }
+.order-item small { color: var(--muted); margin-left: auto; }
+.order-item.cur { border-color: var(--go-hi); background: #183324; }
+.order-item.note { opacity: .55; cursor: default; }
+.order-empty { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.on-ok { color: var(--go-hi); font-weight: 600; margin: 4px 0; }
+#pcoBox input, #pcoBox select { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 7px; color: var(--text); }
+#pcoBox .form { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
+/* Schedule */
+.sched-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #12151c; margin-bottom: 6px; font-size: 13px; }
+.sched-row.off { opacity: .55; }
+.sched-row .grow { flex: 1; }
+.sched-row select, .sched-row input[type=time], .sched-row input[type=number] { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px; color: var(--text); }
+.sched-row .days { display: flex; gap: 2px; }
+.sched-row .day { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+.sched-row .day.on { background: #1f3a5c; border-color: #4a8fe0; color: #fff; }
+.orderbox.big .order-header { flex-basis: 100%; margin: 6px 0 0; }

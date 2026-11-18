@@ -59,6 +59,15 @@ How it works:
 
 It contains the song's structure only, no lyrics or audio. Set the key and BPM from your chart, and change the sections to match your arrangement. The demo show (Setup → **Load demo**) includes it.
 
+## Share a song with another church or campus
+
+**Export song…** (in the song editor) saves the song, its sections, colours and looks as a `.slsong.json` file. **Import song…** (under the set list) opens one:
+
+- **Same lights (same names):** the looks come in exactly as they were.
+- **Different lights:** the design is rebuilt on your lights, with the same levels per role (front, back, moving heads, house), the same palette colours and the same effects.
+
+Importing a song with a name you already have updates that song. **Undo** works if that wasn't what you wanted.
+
 ## Run a song
 
 Pick the song in the set list (or let the tracks or ProPresenter pick it). Then:

@@ -17,6 +17,7 @@
 | Go back | Tap **◀** (or the left arrow key) |
 | Jump to a part (Chorus, Bridge…) | Tap its name |
 | Switch to worship / hosting / sermon | Tap it in the **Service** bar at the top |
+| Go to the next part of the service | Tap **Next item ▶** in the service order (if there is one) |
 | Play a video | Nothing to do: the lights dim by themselves while it plays |
 | Make everything flash | Hold **Flash** (or the **F** key) |
 | Strobe | Hold **Strobe** (or the **S** key) |
