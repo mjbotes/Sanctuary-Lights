@@ -34,6 +34,7 @@ import './design.js';
 import './plan.js';
 import './schedule.js';
 import './share.js';
+import './mcp.js';
 import { $, S, on } from './core.js';
 import { startSession } from './access.js';
 import { renderRuntime } from './live.js';

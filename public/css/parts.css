@@ -61,3 +61,13 @@
 .librow { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-top: 1px solid var(--line); }
 .librow span { flex: 1; }
 .librow small { color: var(--muted); }
+
+/* AI assistant (MCP) */
+.mcp-copy { position: relative; margin: 6px 0 10px; }
+.mcp-code { background: #0b0d12; border: 1px solid var(--line); border-radius: 8px; padding: 10px 72px 10px 12px; font-size: 12px; white-space: pre-wrap; word-break: break-all; margin: 0; max-height: 220px; overflow: auto; }
+.mcp-copy .btn { position: absolute; top: 6px; right: 6px; }
+.mcp-token { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-size: 12px; word-break: break-all; }
+.mcp-role { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; margin: 8px 0; }
+.mcp-role select { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px; color: var(--text); }
+.mcp-more { margin: 8px 0; font-size: 13px; }
+.mcp-more summary { cursor: pointer; color: var(--muted); }

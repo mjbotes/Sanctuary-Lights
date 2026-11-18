@@ -37,6 +37,7 @@
     },
     "files": [
       "server.js",
+      "bin/**",
       "lib/**",
       "public/**",
       "electron/**",
@@ -46,7 +47,8 @@
       "!**/*.map"
     ],
     "asarUnpack": [
-      "**/*.node"
+      "**/*.node",
+      "bin/**"
     ],
     "npmRebuild": false,
     "mac": {
@@ -119,5 +121,8 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.11"
+  },
+  "bin": {
+    "sanctuary-lights-mcp": "bin/sanctuary-lights-mcp.js"
   }
 }

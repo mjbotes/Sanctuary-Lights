@@ -19,6 +19,7 @@ const GUIDES = [
   ['tracks.md', 'Tracks'],
   ['stage-3d.md', '3D stage'],
   ['safety.md', 'Safety, PINs and backups'],
+  ['ai-assistant.md', 'AI assistant (Claude)'],
   ['glossary.md', 'Glossary'],
 ];
 // Which guide the "?" button opens on each tab
