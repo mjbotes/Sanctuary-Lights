@@ -1,5 +1,5 @@
 // Setup tab: output, network, MIDI, show file, DMX monitor.
-import { $, S, act, h, selected, toast } from './core.js';
+import { on, $, S, act, h, selected, toast } from './core.js';
 import { renderOscStatus } from './palette.js';
 import { renderPpStatus } from './propresenter.js';
 import { renderMidiSettings } from './songs.js';
@@ -123,3 +123,15 @@ async function pollDmx() {
 }
 
 export { ifaces, renderSettings, renderIfaces, loadInfo, pollDmx };
+
+// USB-DMX status line
+function renderUsbStatus() {
+  const el = $('#usbStatus');
+  if (!el) return;
+  const u = S.usb;
+  const s = S.show && S.show.settings;
+  if (!s || !s.enttec || !u) return (el.textContent = 'Off.');
+  el.style.color = u.state === 'connected' ? 'var(--go-hi)' : u.state === 'searching' ? 'var(--accent)' : '';
+  el.textContent = `● ${u.message}`;
+}
+on('state', renderUsbStatus);

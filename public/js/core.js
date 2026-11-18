@@ -116,6 +116,7 @@ function connect() {
     S.midi = d.midi || S.midi;
     S.ppConn = d.pp || null;
     S.oscConn = d.osc || null;
+    S.usb = d.usb || null;
     S.role = d.role || 'admin';
     S.history = d.history || {};
     S.version = d.version || '';

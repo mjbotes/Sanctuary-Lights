@@ -383,10 +383,11 @@
             <label>Priority <input name="sacnPriority" type="number" min="0" max="200"></label>
           </fieldset>
           <fieldset>
-            <legend><label class="check"><input type="checkbox" name="enttec"> USB DMX (Enttec DMX USB Pro type)</label></legend>
-            <label>Device <input name="enttecPort" placeholder="/dev/cu.usbserial-XXXX"></label>
+            <legend><label class="check"><input type="checkbox" name="enttec"> USB-DMX interface (Enttec DMX USB Pro or compatible)</label></legend>
+            <div id="usbStatus" class="hint"></div>
+            <label>Device <input name="enttecPort" placeholder="Automatic (leave empty)"></label>
             <label>Universe to send <input name="enttecUniverse" type="number" min="1"></label>
-            <p class="hint">On a Mac, find the device with <code>ls /dev/cu.usbserial*</code> in Terminal. Simple "Open DMX" cables are not supported.</p>
+            <p class="hint">Plug it in and tick the box: it is found automatically, and reconnects if it is unplugged. No driver is needed on a Mac (macOS has the FTDI driver built in); Windows installs it through Windows Update. Not supported: simple "Open DMX" cables and uDMX sticks. Use an Art-Net or sACN node for those.</p>
           </fieldset>
           <fieldset>
             <legend>MIDI from Playback / Ableton</legend>
