@@ -40,7 +40,7 @@ On a new, empty show a short wizard opens. You can open it again any time from *
 3. **Lights:** add each kind of light.
    - Type how many, choose the type, give them a name (e.g. *Front wash*) and tap **Add**. They get DMX addresses one after another: set the lights themselves to the addresses shown.
    - Tap **Find** to make a light blink white, so you can check it's the right one.
-   - Not in the list? Import a GDTF or Open Fixture Library file later (see [Looks and cues → Fixture types](looks-and-cues.md)).
+   - Not in the list? Type its name in **Search the fixture library** under the list, tap it and tick its mode. Or import a GDTF file later (see [Looks and cues → Fixture types](looks-and-cues.md)).
 4. **Cues from:** what tells the lights when to change.
    - **Backing tracks app:** Playback or Ableton sends MIDI. Choose the MIDI input.
    - **Tracks played here:** the app plays the backing tracks itself (see [Tracks](tracks.md)).

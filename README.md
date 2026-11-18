@@ -2,6 +2,7 @@
 
 A simple, free lighting controller for churches. It runs on a Mac, and volunteers run it from a web browser on that Mac **or from an iPad or phone** on the same Wi-Fi.
 
+- **AI assistant (MCP):** connect Claude (Desktop or Code) and ask in your own words: "light this Sunday's songs", "make the bridge bigger", "add a Baptism part". It's off until an admin switches it on, uses a secret token and the permissions you choose, and every change can be undone. See [the guide](public/docs/ai-assistant.md).
 - **Planning Center and a service order:** import Sunday's plan (songs with keys, BPM and arrangements, and the run of the service), then step through the service with **Next item**. A **schedule** can switch lights by itself (walk-in look, all off afterwards), and songs can be **shared** as files between churches.
 - **Light this song for me:** one tap gives every section of a song a look made from your lights and the song's colours. A demo song, *Graves Into Gardens*, shows a complete design from the grave to the garden.
 - **Songs that follow your backing tracks:** plan the lights for every Intro, Verse, Chorus and Bridge. **Playback** (MultiTracks) or **Ableton Live** triggers them over MIDI, or an operator taps them live, or a mix of both.
@@ -12,7 +13,9 @@ A simple, free lighting controller for churches. It runs on a Mac, and volunteer
 - **Live screen for volunteers:** a big **GO** button steps through the service cue list. Scene buttons ("Pulpit", "Baptism", "Worship wash") switch on over anything. There is a master fader and a blackout button.
 - **Program screen:** tap lights on a stage map, then set intensity, colour (swatches or a colour picker), pan/tilt, zoom and haze. Save the result as a cue or a scene.
 - **Output:** Art-Net, sACN (E1.31), and USB DMX widgets of the Enttec DMX USB Pro type (found automatically, no driver needed on a Mac).
-- **Fixture types:** generic LED pars, dimmers, moving heads and hazers built in; import any light from a **GDTF** or **Open Fixture Library** file, or type your own from the light's manual.
+- **Fixture types:** generic LED pars, dimmers, moving heads and hazers built in. **Search the Open Fixture Library** by name (about 650 lights, pixel bars included) on the Patch tab or in the setup wizard, import a **GDTF** or OFL file, or type your own from the light's manual.
+- **Follow the band by sound:** no tracks or click? The app listens to a desk feed or a microphone, finds the beat for effects and busking, and makes the lights bigger when the music is (only in worship, never during the sermon). See [the guide](public/docs/follow-the-band.md).
+- **Light health:** a guided **pre-service check** blinks each light in turn so someone can tap *Works* or what's wrong. Problems stay listed (and in the service report) until fixed, and you get hours-on counts and cleaning reminders. See [the guide](public/docs/light-health.md).
 - **Setup wizard and test page:** a few questions on first start, then one screen that shows whether DMX, MIDI, OSC, ProPresenter, timecode and audio are working, blinks each light, and plays test tones.
 - **Safe for volunteers:** PINs for volunteers, operators and admins; **Undo**; a **Panic** button; automatic snapshots. If the app or the Mac restarts mid-service, it comes back on the cue it was on.
 - **Saving and updates:** the show saves automatically, and the desktop app updates itself.
@@ -42,7 +45,7 @@ Not sure which Mac you have? Apple menu → **About This Mac**: *Chip: Apple M�
 On a Mac, open the `.dmg` and drag **Sanctuary Lights** to Applications. It's a normal Mac app: it appears in the Dock, keeps running in the background without slowing down audio or lighting timing, and has its own menu (View → Toggle Full Screen).
 
 - **First launch:** unless the build was signed with an Apple Developer certificate (see below), macOS blocks the app. Try to open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
-- **Permissions:** allow the microphone (for vocals) and the local network (for Art-Net/sACN and iPads) when asked.
+- **Permissions:** allow the microphone (for vocals and following the band) and the local network (for Art-Net/sACN and iPads) when asked.
 
 The app includes everything (no Node.js needed), and iPads can still connect to the address shown in Setup.
 
@@ -164,6 +167,8 @@ In **Cues & Scenes** every cue has:
 - **Backup:** the desk is passed straight through, and Sanctuary Lights takes over if the desk stops sending.
 
 ## Importing fixture types (GDTF, Open Fixture Library)
+
+**Search:** type a light's name in the search box under *Patch → Fixture types* (or in the setup wizard). The list of the Open Fixture Library's fixtures ships with the app (`lib/data/ofl-index.json`, rebuilt with `scripts/build-ofl-index.js`), so searching works offline; the chosen fixture is downloaded from GitHub once and then kept in the data folder. Fixture data © the Open Fixture Library contributors, MIT licence.
 
 **Patch → Import fixture file…** takes `.gdtf` files (from the manufacturer or gdtf-share.com) and Open Fixture Library `.json` files (open-fixture-library.org → a fixture → *Download → OFL JSON*). Choose the modes you want, and they appear in the list of fixture types, with colour wheels, CMY, gobo, prism, shutter and fine channels understood. MVR files with embedded GDTF bring their types in automatically.
 

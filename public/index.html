@@ -43,6 +43,7 @@
     <button data-tab="setup">Setup</button>
     <button data-tab="help">Help</button>
   </nav>
+  <button id="practiceBtn" class="btn small practicebtn" title="Rehearse without changing the real lights">Practice</button>
   <button id="undoBtn" class="btn small iconbtn" disabled aria-label="Undo">↶</button>
   <button id="redoBtn" class="btn small iconbtn" disabled aria-label="Redo">↷</button>
   <button id="roleBadge" class="btn small rolebadge" hidden title="Lock this screen">Admin</button>
@@ -51,6 +52,7 @@
 </header>
 
 <div id="updateBanner" class="updbanner" hidden></div>
+<div id="practiceBanner" class="practicebanner" hidden></div>
 <main>
   <!-- VOLUNTEER -->
   <section id="tab-simple" class="tab">
@@ -127,6 +129,7 @@
         <div class="row wrap" style="margin:6px 0 10px">
           <button class="btn small" id="previewSong" title="Step through every section in time, to see the whole design (try the 3D view)">▶ Preview</button>
           <button class="btn small" id="designSong" title="Make a look for every section from your lights and the song's colours (P / S / T)">✨ Light this song for me</button>
+          <span id="takeBox" class="row"></span>
         </div>
         <div class="padpanel inset" id="songsPads"></div>
         <div class="buskpanel inset" id="songsBusk"></div>
@@ -339,7 +342,8 @@
       </div>
       <div class="panel">
         <div class="panelhead"><h2>Fixture types</h2><label class="btn small primary">Import GDTF / OFL…<input type="file" id="fixtureFile" accept=".gdtf,.json" multiple hidden></label></div>
-        <p class="hint">Get your lights' files from <b>gdtf-share.com</b> (GDTF) or <b>open-fixture-library.org</b> (download "OFL JSON"). They bring the right channels, colour wheels, gobos and shutter settings.</p>
+        <div class="oflsearch"><input id="oflQuery" type="search" placeholder="Find your light: e.g. Chauvet SlimPAR, Rogue R2 Wash…" autocomplete="off"><div id="oflResults" class="oflresults"></div></div>
+        <p class="hint">Searches the free <b>Open Fixture Library</b> (about 650 lights); adding one needs the internet once. Not there? Import a file from <b>gdtf-share.com</b> (GDTF) or <b>open-fixture-library.org</b> (download "OFL JSON"). Either way you get the right channels, colour wheels, gobos and shutter settings.</p>
         <div id="profileList"></div>
         <form id="profForm" class="form">
           <h3 id="profFormTitle">New fixture type</h3>
@@ -503,6 +507,16 @@
         <div id="testLights"></div>
         <h3 class="sub">Sound</h3>
         <div id="testAudio"></div>
+        <div class="panelhead"><h2>Light health</h2></div>
+        <div id="healthBox"></div>
+        <div class="panelhead"><h2>Follow the band by sound</h2></div>
+        <div id="soundBox"></div>
+        <div class="panelhead"><h2>Service reports</h2></div>
+        <div id="reportBox"></div>
+        <div class="panelhead"><h2>Hardware controller</h2></div>
+        <div id="controllerBox"></div>
+        <div class="panelhead"><h2>AI assistant (MCP)</h2></div>
+        <div id="mcpBox"><p class="hint">Open this tab again to load.</p></div>
         <div class="panelhead"><h2>Planning Center</h2></div>
         <div id="pcoBox"><p class="hint">Open this tab again to load.</p></div>
         <div class="panelhead"><h2>Schedule</h2><button class="btn small" id="scheduleAdd">+ Add</button></div>
@@ -614,6 +628,9 @@
     <p class="hint">Shortcuts work on every tab, except while typing in a box.</p>
     <div class="row" style="justify-content:flex-end"><button type="button" class="btn" id="helpFull">Open the guides</button><button value="ok" class="btn primary">Close</button></div>
   </form>
+</dialog>
+<dialog id="checkDialog" class="ck-dialog">
+  <div class="ck-body"></div>
 </dialog>
 <dialog id="fixtureDialog" class="wide">
   <form method="dialog">

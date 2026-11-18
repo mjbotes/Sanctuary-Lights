@@ -25,7 +25,7 @@ Every group (made on the Program tab) gets a strip on the Live and Songs tabs:
 - **Pulse / Chase / Sparkle / Rainbow / Move:** effects in time with the tempo. *Move* appears for moving heads; the speed menu sets beats per cycle. **More…** lists every effect.
 - **Release live** clears all of it.
 
-**The tempo** comes from **TAP** (or the **T** key), the song's BPM, or MIDI clock from Ableton. Click the BPM number to type one.
+**The tempo** comes from **TAP** (or the **T** key), the song's BPM, MIDI clock from Ableton, or the band itself ([Follow the band by sound](follow-the-band.md)). Click the BPM number to type one.
 
 **Recording:** live colours and effects are saved into the next look or cue you record, so a *Chorus* look can always pulse the back wash on the beat. Fader trims and flashes are never recorded.
 
@@ -84,6 +84,24 @@ The **Selection tricks** panel changes the order and grouping of the selection w
 - **Fade / Delay From → To:** gives each light its own fade or delay in the next look you record, so changes ripple across the stage.
 
 **Tricks on/off** pauses them; **Reset** clears them.
+
+## Record live busking (live takes)
+
+Busk a song once in rehearsal and it plays back the same way on Sunday:
+
+1. Pick the song, and tap **● Record live take** (Songs tab, under NEXT).
+2. Play the song with its tracks (Tracks tab), or with MIDI timecode if the song has a start timecode.
+3. Busk: group faders, colours (including P / S / T), effects, Flash, Strobe, pads, live palette changes. **● REC** shows how many moves are recorded.
+4. Tap **■ Stop & save**, or **Discard** to throw it away.
+
+When the song plays, the **live take** plays your moves at the same moments in the music, on top of the section looks.
+
+- It stays in time when you change the song's tempo.
+- If the band repeats or skips a section (or you jump in the tracks), the take catches up to the right state for that point. Momentary flashes and strobes are left out.
+- When the song stops, the take's live changes end too.
+- Untick **Live take** to keep it but not play it; **×** deletes it.
+
+You can still busk on top while a take plays.
 
 ## Busking a song
 

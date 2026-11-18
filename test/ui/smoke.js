@@ -34,6 +34,26 @@ const data = fs.mkdtempSync(path.join(os.tmpdir(), 'sl-smoke-'));
         const visible = await page.locator(`#tab-${tab}`).isVisible();
         if (!visible) errors.push(`${viewport.width}px: tab ${tab} did not show`);
       }
+      if (viewport.width > 1000) {
+        // Fixture library search (bundled list, works offline), light health and sound panels
+        await page.locator('#tabs button[data-tab=patch]').click();
+        await page.fill('#oflQuery', 'slimpar');
+        await page.waitForSelector('#oflResults .oflrow', { timeout: 5000 }).catch(() => {});
+        if (!(await page.locator('#oflResults .oflrow').count())) errors.push(`fixture library search found nothing: ${await page.textContent('#oflResults')}`);
+        await page.locator('#tabs button[data-tab=setup]').click();
+        await page.waitForTimeout(300);
+        if (!/Pre-service check/.test(await page.textContent('#healthBox'))) errors.push('light health panel missing');
+        if (!/Listen on this computer/.test(await page.textContent('#soundBox'))) errors.push('sound panel missing');
+        if (/\bnull\b/.test(await page.textContent('#tab-setup'))) errors.push('"null" shown on the Setup tab');
+        await page.locator('#healthBox button', { hasText: 'Pre-service check' }).click();
+        await page.waitForTimeout(300);
+        if (!/Light 1 of/.test(await page.textContent('#checkDialog'))) errors.push('pre-service check did not open');
+        await page.keyboard.press('Enter');
+        await page.locator('#checkDialog button', { hasText: 'Finish now' }).click();
+        await page.waitForTimeout(400);
+        if (!/1 working/.test(await page.textContent('#checkDialog'))) errors.push('pre-service check summary missing');
+        await page.locator('#checkDialog button', { hasText: 'Close' }).click();
+      }
       const sw = await page.evaluate(() => document.documentElement.scrollWidth);
       if (viewport.width < 500 && sw > viewport.width + 2) errors.push(`${viewport.width}px: page scrolls sideways (${sw}px)`);
       await page.close();

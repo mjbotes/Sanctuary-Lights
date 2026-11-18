@@ -168,6 +168,36 @@ export class Stage3D {
     this.controls.update();
     this.saveCamera();
   }
+  // A picture of the stage (for the AI assistant): rendered at a fixed size from a standard view,
+  // then the camera and size go back to what the person had. Returns a JPEG data URL.
+  snapshot(name = 'front', w = 960, h = 540) {
+    const pos = this.camera.position.clone(), tgt = this.controls.target.clone();
+    let saved = null;
+    try { saved = localStorage.getItem('cam3d'); } catch {}
+    const size = this.renderer.getSize(new THREE.Vector2());
+    const ratio = this.renderer.getPixelRatio();
+    this.renderer.setPixelRatio(1);
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+    this.view(name);
+    this.renderer.render(this.scene, this.camera);
+    const url = this.canvas.toDataURL('image/jpeg', 0.85);
+    // put everything back
+    this.camera.position.copy(pos);
+    this.controls.target.copy(tgt);
+    this.controls.update();
+    try { if (saved) localStorage.setItem('cam3d', saved); } catch {}
+    this.renderer.setPixelRatio(ratio);
+    if (size.x && size.y) {
+      this.renderer.setSize(size.x, size.y, false);
+      this.camera.aspect = size.x / size.y;
+    }
+    this.camera.updateProjectionMatrix();
+    this.resize();
+    return url;
+  }
+
   setWorkLight(on) {
     this.workOn = on;
     this.work.intensity = on ? 1.6 : 0;

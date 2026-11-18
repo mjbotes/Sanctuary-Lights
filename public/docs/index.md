@@ -21,9 +21,12 @@ Sanctuary Lights runs your church's lights. It can follow your backing tracks an
 ## Going further
 
 - [Live control, pads and effects](live-effects.md): busking, strobes, chases, moving-head effects, presets and selection tricks.
+- [Follow the band by sound](follow-the-band.md): no tracks or click? The lights find the beat and get bigger when the music does.
+- [Light health and the pre-service check](light-health.md): check every light before the service, keep a list of problems, and get reminders to clean them.
 - [Tracks](tracks.md): play backing tracks in the app, change the key and tempo, click and guide cues, and live auto-tune.
 - [3D stage](stage-3d.md): your church in 3D, MVR import, and screens and LED walls.
 - [Safety, PINs and backups](safety.md): who can change what, undo, Panic, snapshots and updates.
+- [AI assistant (Claude)](ai-assistant.md): let Claude light songs, build looks and set things up for you.
 - [Glossary](glossary.md): what all the words mean.
 
 > **Tip:** the **?** button at the bottom of every screen opens the guide for the screen you're on.

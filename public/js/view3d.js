@@ -1,6 +1,6 @@
 // 3D view: creating it, tools, placing lights and models, MVR import.
 import { Stage3D } from '../stage3d.js';
-import { $, $$, S, act, fixById, fixtures, h, selected, toast, authHeaders } from './core.js';
+import { $, $$, S, act, ask, fixById, fixtures, h, selected, toast, authHeaders } from './core.js';
 import { profileOptions } from './patch.js';
 import { resetSlide } from './propresenter.js';
 import { renderScreens } from './screens.js';
@@ -52,7 +52,33 @@ function tools3d(el) {
     for (const b of $$('.tools3d .work')) b.classList.toggle('on', S.work);
   };
   work.classList.add('work');
-  el.append(h('div', { className: 'tools3d' }, ...views.map(([k, l]) => h('button', { className: 'btn', onclick: () => stage3d && stage3d.view(k) }, l)), work, h('label', {}, 'Haze', haze)));
+  el.append(h('div', { className: 'tools3d' }, ...views.map(([k, l]) => h('button', { className: 'btn', onclick: () => stage3d && stage3d.view(k) }, l)), work, h('label', {}, 'Haze', haze),
+    h('button', { className: 'btn aimbtn', title: 'Point the selected moving heads at a place: tap it on the stage', onclick: aimMovers }, '🎯 Aim movers'),
+    h('select', { className: 'aimheight', title: 'What to aim at on the spot you tap', onchange: (e) => { try { localStorage.setItem('aimHeight', e.target.value); } catch {} } },
+      ...[['1.2', 'at a person'], ['0', 'on the floor'], ['1.8', 'above a person']].map(([v, l]) => h('option', { value: v, selected: (localStorage.getItem('aimHeight') || '1.2') === v }, l)))));
+}
+
+// Aim the selected moving heads at a tapped point, then offer to save it as a focus point
+// (a position that stays on that place even when lights are moved).
+function aimMovers() {
+  const movers = [...S.sel].filter((id) => {
+    const f = fixById(id);
+    const p = f && S.profiles[f.profile];
+    return p && p.attrs.includes('pan') && p.attrs.includes('tilt');
+  });
+  if (!movers.length) return toast('Select moving heads first (Program tab: tap them, or a group)', true);
+  if (!stage3d) return;
+  const height = Number(localStorage.getItem('aimHeight') || 1.2);
+  toast(`Tap where ${movers.length === 1 ? 'it' : `the ${movers.length} moving heads`} should point (aiming ${height ? `${height} m above` : 'at'} the spot you tap)`);
+  stage3d.startAim(null, async (_id, p) => {
+    const r = await act('prog.aim', { fixtures: movers, point: p, height });
+    if (!r) return;
+    const name = await ask('Aimed. Save this as a focus point? Name it (e.g. Pulpit), or cancel to keep it just for now');
+    if (name && name.trim()) {
+      const f = await act('preset.focus', { name, point: p, height, fixtures: movers });
+      if (f) toast(`Focus point "${f.name}" saved (FX & Presets → Position). It stays on that spot even if a light is moved.`);
+    }
+  });
 }
 function place3d() {
   document.body.classList.toggle('v3d', !!S.view3d);

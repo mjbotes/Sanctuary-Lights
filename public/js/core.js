@@ -85,12 +85,12 @@ function actThrottled(key, type, payload) {
 }
 
 // Tiny event bus: other modules react to updates from the server.
-const listeners = { state: [], runtime: [], live: [], auth: [] };
+const listeners = {};
 function on(event, fn) {
-  listeners[event].push(fn);
+  (listeners[event] ||= []).push(fn);
 }
 function emit(event, data) {
-  for (const fn of listeners[event]) {
+  for (const fn of listeners[event] || []) {
     try {
       fn(data);
     } catch (e) {
@@ -121,6 +121,7 @@ function connect() {
     S.history = d.history || {};
     S.version = d.version || '';
     S.update = d.update || null;
+    S.health = d.health || null;
     for (const id of [...S.sel]) if (!S.show.fixtures.some((f) => f.id === id)) S.sel.delete(id);
     $('#outErr').textContent = d.outputError || '';
     emit('state', d);
@@ -129,6 +130,7 @@ function connect() {
     S.runtime = JSON.parse(e.data);
     emit('runtime');
   });
+  es.addEventListener('snapshot', (e) => emit('snapshot', JSON.parse(e.data)));
   es.addEventListener('live', (e) => {
     S.live = JSON.parse(e.data);
     emit('live');

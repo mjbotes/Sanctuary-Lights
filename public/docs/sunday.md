@@ -18,7 +18,7 @@ This guide is for the person responsible for lights on a Sunday. It assumes the 
    - **MIDI in:** ask the tracks operator to play a few seconds of a song; it should show what arrived.
    - **ProPresenter** should say *Connected*.
    - **Audio** (if the app plays the tracks): play a test tone on each output.
-3. Tap **Blink every light in turn** and watch the stage. Each light should blink white when its name is shown. A light that doesn't blink isn't getting DMX: check its cable, address and power.
+3. Run the **pre-service check** (Setup → Light health): each light blinks in turn and you tap **Works** or what's wrong. Problems are kept on a list until someone fixes them. See [Light health](light-health.md). A light that doesn't blink isn't getting DMX: check its cable, address and power.
 4. Tap **Pre-service** (if you have that part), or show your walk-in look.
 
 ## During the service
@@ -47,6 +47,30 @@ Usually you only switch the **service parts**, and the rest happens by itself:
 - Tap **Post-service** (if you have it), or a house-lights look.
 - Changes you made during the service are saved automatically. If you changed something by mistake, **Undo** (↶ at the top) or restore a **snapshot** in Setup. See [Safety](safety.md).
 - Turn the lights off at the end of the day, then the computer.
+- **Look at the service report** (Setup → Service reports). It shows:
+  - every song with its start time and how long it ran
+  - each section and service part, and what caused it: a tap, MIDI from the tracks, ProPresenter, the schedule, the controller…
+  - any problems: ProPresenter or USB-DMX dropping out, DMX output errors, Panic
+
+  It's useful for finding out what went wrong (or right), and for planning next week. **Print** gives a clean page. Reports are kept for 90 days.
+
+## Practice mode: rehearse without touching the lights
+
+Tap **Practice** at the top right. The real lights freeze exactly as they are, and every screen shows a striped **PRACTICE MODE** banner. Everything you do is now a rehearsal:
+
+- tap through songs and sections
+- switch service parts
+- step through the service order
+- try pads and effects
+
+Watch the result in the 2D / 3D view. It's ideal for training volunteers midweek while the hall is in use, or for walking through Sunday's plan.
+
+To leave practice mode:
+
+- **Back to the real stage:** the screens go back to what the lights are doing, and nothing on stage changes.
+- **Send this to the lights:** what you practised goes to the real lights.
+
+Looks, songs and other programming you change while practising are saved as normal (and can be undone).
 
 ## Running it without a lighting person
 

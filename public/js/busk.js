@@ -62,7 +62,7 @@ function updateBusk() {
   if (!S.show) return;
   const busk = S.runtime.busk || {};
   const stored = storedEffects();
-  for (const el of $$('.bk-bpm')) el.replaceChildren(`${Math.round(S.runtime.bpm || 120)} BPM `, h('small', {}, S.runtime.clock ? 'MIDI clock' : ''));
+  for (const el of $$('.bk-bpm')) el.replaceChildren(`${Math.round(S.runtime.bpm || 120)} BPM `, h('small', {}, S.runtime.clock ? 'MIDI clock' : S.runtime.sound && S.runtime.sound.tempo ? 'by ear' : ''));
   for (const card of $$('.bk-card')) {
     const b = busk[card.dataset.g] || {};
     const level = b.level ?? 1;

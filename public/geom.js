@@ -44,6 +44,33 @@
     return norm(rotate(t, UP, (pan - 0.5) * 540 * D2R));
   }
 
+  // The reverse of beamDir: the pan and tilt (0-1) that point a moving head at `target`.
+  // A coarse search over the whole range, then refinement; among equally good answers the one
+  // nearest the middle of the range wins (less travel, and the same answer every time).
+  function aimAt(pos, aim, target) {
+    const want = norm(sub(target, pos));
+    const cost = (p, t) => 1 - dot(beamDir(pos, aim, true, p, t), want) + 0.0004 * (Math.abs(p - 0.5) + Math.abs(t - 0.5));
+    let best = { p: 0.5, t: 0.5, c: cost(0.5, 0.5) };
+    for (let i = 0; i <= 108; i++) for (let j = 0; j <= 54; j++) {
+      const p = i / 108, t = j / 54;
+      const c = cost(p, t);
+      if (c < best.c) best = { p, t, c };
+    }
+    for (let step = 1 / 108; step > 1e-5; step /= 2) {
+      let moved = true;
+      while (moved) {
+        moved = false;
+        for (const [dp, dt] of [[step, 0], [-step, 0], [0, step], [0, -step]]) {
+          const p = Math.min(1, Math.max(0, best.p + dp)), t = Math.min(1, Math.max(0, best.t + dt));
+          const c = cost(p, t);
+          if (c < best.c - 1e-12) { best = { p, t, c }; moved = true; }
+        }
+      }
+    }
+    const err = Math.acos(Math.min(1, Math.max(-1, dot(beamDir(pos, aim, true, best.p, best.t), want)))) / D2R;
+    return { pan: Math.round(best.p * 1e4) / 1e4, tilt: Math.round(best.t * 1e4) / 1e4, errorDeg: Math.round(err * 10) / 10 };
+  }
+
   // Screen: { x, y, z (centre), w, h, rotY (deg, 0 = facing the audience), rotX (deg, tilt) }
   function screenFrame(s) {
     const ry = (s.rotY || 0) * D2R, rx = (s.rotX || 0) * D2R;
@@ -81,7 +108,7 @@
     return { x: Math.cos(e) * Math.cos(t), y: Math.sin(e), z: -Math.cos(e) * Math.sin(t) };
   }
 
-  const api = { defaultPos, defaultAim, placement, beamDir, screenFrame, beamHitsScreen, directionOf, dot, sub, norm, STAGE };
+  const api = { defaultPos, defaultAim, placement, beamDir, aimAt, screenFrame, beamHitsScreen, directionOf, dot, sub, norm, STAGE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Geom = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

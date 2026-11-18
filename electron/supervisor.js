@@ -20,7 +20,7 @@ class ServerSupervisor extends EventEmitter {
   start() {
     return new Promise((resolve, reject) => {
       const child = utilityProcess.fork(path.join(__dirname, '..', 'server.js'), [], {
-        env: { ...process.env, SL_EMBEDDED: '1', PORT: String(this.port) },
+        env: { ...process.env, SL_EMBEDDED: '1', SL_APP_EXEC: process.execPath, PORT: String(this.port) },
         stdio: 'pipe',
         serviceName: 'Sanctuary Lights engine',
       });

@@ -52,3 +52,4 @@ dialog label.check input { width: auto; margin: 0; }
 .bk-fx button.on { background: #26406b; color: #fff; border-color: #34578f; }
 .bk-fx button.auto { border-color: #34578f; border-style: dashed; color: #bcd3ff; }
 .bk-fx select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-size: 12px; }
+.tools3d select { background: #161a22cc; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-size: 12px; }
