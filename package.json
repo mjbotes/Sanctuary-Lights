@@ -75,7 +75,8 @@
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Sanctuary Lights uses audio inputs for live vocals and auto-tune.",
         "NSLocalNetworkUsageDescription": "Sanctuary Lights sends lighting data (Art-Net / sACN) and lets iPads connect on your network."
-      }
+      },
+      "artifactName": "Sanctuary-Lights-mac-${arch}.${ext}"
     },
     "dmg": {
       "title": "Sanctuary Lights ${version}"
@@ -95,16 +96,18 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Sanctuary Lights"
+      "shortcutName": "Sanctuary Lights",
+      "artifactName": "Sanctuary-Lights-Windows-Setup.${ext}"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
       "category": "AudioVideo",
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "artifactName": "Sanctuary-Lights-Linux.${ext}"
     },
-    "artifactName": "Sanctuary-Lights-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Sanctuary-Lights-${os}-${arch}.${ext}",
     "publish": [
       {
         "provider": "github",
