@@ -9,9 +9,11 @@ A simple, free lighting controller for churches. It runs on a Mac, and volunteer
 - **Live control:** every group gets a fader, colour buttons, a Flash button and effects (pulse, chase, sparkle, rainbow, movement) locked to a tempo. The tempo comes from TAP, the song's BPM or Ableton's MIDI clock. This works on top of anything that's running.
 - **Live screen for volunteers:** a big **GO** button steps through the service cue list. Scene buttons ("Pulpit", "Baptism", "Worship wash") switch on over anything. There is a master fader and a blackout button.
 - **Program screen:** tap lights on a stage map, then set intensity, colour (swatches or a colour picker), pan/tilt, zoom and haze. Save the result as a cue or a scene.
-- **Output:** Art-Net, sACN (E1.31), and USB DMX widgets of the Enttec DMX USB Pro type.
-- **Fixture types:** generic LED pars (RGB, RGBW, RGBWA+UV, with or without a dimmer channel), dimmers, moving-head wash and hazer, plus your own types typed in from the light's manual.
-- **Saving:** the show saves automatically, with a backup each time the app starts. If the Mac restarts mid-service, the app reopens on the cue it was on.
+- **Output:** Art-Net, sACN (E1.31), and USB DMX widgets of the Enttec DMX USB Pro type (found automatically, no driver needed on a Mac).
+- **Fixture types:** generic LED pars, dimmers, moving heads and hazers built in; import any light from a **GDTF** or **Open Fixture Library** file, or type your own from the light's manual.
+- **Setup wizard and test page:** a few questions on first start, then one screen that shows whether DMX, MIDI, OSC, ProPresenter, timecode and audio are working, blinks each light, and plays test tones.
+- **Safe for volunteers:** PINs for volunteers, operators and admins; **Undo**; a **Panic** button; automatic snapshots. If the app or the Mac restarts mid-service, it comes back on the cue it was on.
+- **Saving and updates:** the show saves automatically, and the desktop app updates itself.
 - **No installs beyond Node.js:** apart from an optional MIDI module, the app has no other dependencies.
 
 ## Desktop app (installer)
@@ -75,6 +77,21 @@ To build locally: `npm install`, then `npm run dist:mac` (or `dist:win` / `dist:
 
 To run it from Terminal instead, use `node server.js`. To use a different port, use `PORT=9000 node server.js`.
 
+## First start: setup wizard and test page
+
+On a new, empty show the **setup wizard** opens by itself (you can reopen it from **Setup → Test → Setup wizard…**). It asks:
+
+1. What the room is called.
+2. How the lights connect: USB-DMX, Art-Net, sACN, or not yet.
+3. Which lights you have. Add each kind with a count; they get DMX addresses one after another. **Find** blinks a light so you can check it.
+4. What tells the lights when to change: a backing-tracks app over MIDI, tracks played in this app, ProPresenter, or a volunteer pressing Next.
+
+**Setup → Test** is the place to check everything before a service:
+
+- **Inputs and outputs:** a green dot for each of DMX out, MIDI in, OSC in, ProPresenter, timecode and audio, with what last arrived.
+- **Lights:** blink each light white at full (this works even in blackout), all together, or every light in turn with its name shown.
+- **Sound** (on the computer playing the audio): a short test tone on each output pair (left, right, then both) and a mic level check.
+
 ## Connecting to the lights
 
 You need something that turns the computer's output into DMX for the lights:
@@ -83,7 +100,7 @@ You need something that turns the computer's output into DMX for the lights:
 |---|---|
 | **Art-Net node** (most common) | Tick Art-Net. "Send to" can stay as `255.255.255.255` (broadcast), or put in the node's IP. Most nodes call the first universe **0**, which is the default. |
 | **sACN node**, or a console that receives sACN | Tick sACN and choose the network port the node is plugged into. |
-| **Enttec DMX USB Pro** (or a compatible "Pro" widget) | Tick USB DMX and enter the device, e.g. `/dev/cu.usbserial-EN123456`. In Terminal, `ls /dev/cu.usbserial*` lists it. |
+| **Enttec DMX USB Pro** (or a compatible "Pro" widget) | Tick USB-DMX and plug it in. It is **found automatically** and reconnects if unplugged. Macs need no driver (the FTDI driver is built into macOS); Windows installs it through Windows Update. To use a particular one, enter the device in *Device*. |
 
 Tips:
 
@@ -106,6 +123,40 @@ How looks combine:
 - Scenes add on top. Each light uses the highest intensity of the cue and any active scenes, and colours blend with each scene's fader level.
 - Anything you are editing on the Program tab overrides both, until you press **Clear**.
 - The master fader and Blackout scale intensity only.
+
+## Cue timing, tracking and timecode
+
+In **Cues & Scenes** every cue has:
+
+| Column | What it does |
+|---|---|
+| **Fade** | Fade time for lights getting brighter or changing. |
+| **Down** | Separate fade for lights getting dimmer (empty = same as Fade). |
+| **Delay** | Wait before the cue starts fading. |
+| **Follow** | Go to the next cue by itself after this many seconds (an auto-follow chain). |
+| **Timecode** | With *Follow MIDI timecode* on (Setup), the cue goes when the timecode passes it. |
+
+**Tracking** (switch above the cue list): each cue only stores what changed, and everything else carries on from the cues before it, like on a theatre console. Fix a light once and the change carries forward. Tick **Block** on a cue to make it a full look again (a clean starting point).
+
+**MIDI timecode (MTC):** send timecode from Ableton, Playback, QLab or a video server to the MIDI input. Cues with a timecode go at their time. A song with a **start timecode** (Tracks tab) follows its section markers against the timecode. Jumping around the timeline puts the right cue or section up.
+
+**Input from another lighting desk** (Setup): receive Art-Net or sACN from a console.
+
+- **Merge:** the highest level wins on each channel.
+- **Backup:** the desk is passed straight through, and Sanctuary Lights takes over if the desk stops sending.
+
+## Importing fixture types (GDTF, Open Fixture Library)
+
+**Patch → Import fixture file…** takes `.gdtf` files (from the manufacturer or gdtf-share.com) and Open Fixture Library `.json` files (open-fixture-library.org → a fixture → *Download → OFL JSON*). Choose the modes you want, and they appear in the list of fixture types, with colour wheels, CMY, gobo, prism, shutter and fine channels understood. MVR files with embedded GDTF bring their types in automatically.
+
+## Access, undo and safety
+
+- **PINs** (Setup → Access): give volunteers a PIN that only opens the **Volunteer** screen (big Next/Back buttons for the song or cue list, Panic and Blackout). Operators run everything during a service. Only admins change the patch, settings and show file. With no PINs set, everyone on the network is an admin. The computer the app runs on is always an admin.
+- **Undo / Redo** (top bar, or ⌘Z / ⌘⇧Z): every change to the show can be undone, including restoring a snapshot.
+- **Snapshots** (Setup): saved automatically every few minutes while you work, and at every start. Restore any of them.
+- **Panic** (hold for 1 second): stops strobes, effects and every live change, sets the master to full, and fades to the **safe look** chosen in Setup → Safety.
+- **Crash recovery:** if the lighting engine stops, the desktop app restarts it within a few seconds, on the same cue, song and section. The DMX output keeps its last frame in between.
+- **Updates:** the desktop app checks GitHub Releases, downloads new versions in the background and installs them when you quit (or from the menu: *Check for updates*). Setup → Updates shows the version.
 
 ## Primary, secondary and tertiary colours
 
@@ -303,7 +354,26 @@ The **Tracks** tab plays your backing tracks itself, so no Ableton or Playback i
 
 **Mixer:** each stem has a fader with a meter, mute and solo, pan, and an **output**. With a multi-output audio interface, send the click and guide to 3-4 for in-ears and the band tracks to Main 1-2 for FOH. Click/guide stems go to 3-4 automatically.
 
-**Transport:** **Play/Stop**, **⏮**, click the timeline to jump, tap a section name to jump to its marker. **Vamp** repeats the current section until you press it again, which is good for a spontaneous extra chorus.
+**Transport:** **Play/Stop**, **⏮**, click the timeline to jump, and tap a section name to jump to its marker.
+
+- **Section jumps wait for the next bar line**, so the band stays in time. A dashed line on the timeline shows where the jump will happen; **Cancel** drops it. Set *Section jumps → Straight away* per song if you prefer.
+- **Vamp** repeats the current section until you press it again.
+- **Repeat** plays this section once more when it ends (a spontaneous extra chorus).
+- **Skip next** skips the next section when this one ends.
+- **Drag a marker** on the timeline to move it. It snaps to the beat; hold Shift to place it freely.
+
+**Click, count-in and guide cues** (the *Click, count-in & guide cues* panel under the timeline):
+
+- Set the **time signature** and where **bar 1** starts in the recording.
+- **Click:** a click generated from the song's tempo, with an accent on beat 1, at its own level and output (usually the in-ear mix). It follows tempo changes.
+- **Count-in:** one or two bars of click before the music starts when you press Play.
+- **Guide cues:** upload a spoken "Verse", "Chorus", "Bridge"… once (shared by every song), tick *Speak the section name a bar early*, and the band hears it a bar before each section.
+
+**MIDI clock out:** on the computer playing the audio, choose a MIDI output under *MIDI clock* (Tracks tab, left). Keyboards, effects pedals or Ableton then follow the song's tempo, with Start/Stop and the song position, including after jumps. This needs Chrome, Edge or the desktop app (Safari has no Web MIDI).
+
+**Voices keep their tone:** stems named vocal, vox, guide, BGV, choir or lead are marked **Natural voice**: when the key changes, their formants are kept, so they don't sound like chipmunks or giants. Tick or untick it on any stem.
+
+**Faster after a restart:** rendered key and tempo versions are stored with the show's files, so they are not rendered again after the app restarts.
 
 **Which computer plays the audio:** tick **This computer plays the audio** on the Mac connected to the sound desk, and choose the output device there. Other screens (iPads, the lighting laptop) then work as remotes for play, stop, key and mix.
 
@@ -366,7 +436,12 @@ Playback can send MIDI to other gear. Check MultiTracks' help pages for where yo
 
 ## On an iPad
 
-Join the iPad to the same Wi-Fi network. Open the address shown in Setup (for example `http://192.168.1.20:8080`) in Safari, then use Share → **Add to Home Screen**.
+Join the iPad to the same Wi-Fi network. Open the address shown in Setup (for example `http://192.168.1.20:8080`) in Safari, then use Share → **Add to Home Screen**. It then opens full screen like an app, with its own icon.
+
+- It reconnects by itself when the iPad wakes from sleep.
+- Swipe the tab bar sideways to reach the other tabs.
+- Every control works by touch, including the hold buttons (Strobe, Flash, Panic).
+- MIDI clock out and *Use this browser's MIDI* need Chrome or Edge, so they are hidden in Safari. Everything else works.
 
 > Anyone on that Wi-Fi network can open the controller. Use a staff or production network rather than guest Wi-Fi.
 
@@ -395,28 +470,64 @@ dim red green blue white strobe=0 -
 ## Development
 
 ```
-npm install         # optional: MIDI input module
-npm test            # unit tests (mixing, fades, patch, songs/MIDI, live effects, MVR, packet formats)
-node server.js
+npm install         # dev tools (Electron, builder) and the optional MIDI module
+npm test            # unit tests (node:test): engine, cues, songs, MIDI/OSC/ProPresenter, packets, audio DSP
+npm run test:ui     # browser smoke test (Playwright + Chromium)
+node server.js      # or: npm start, then open http://localhost:8080
+npm run app         # the desktop app (Electron)
 ```
 
-Code layout:
+There is no build step: the browser code is plain ES modules, and the server is Node.js with no runtime dependencies (`@julusian/midi` and `electron-updater` are optional).
 
-- `lib/engine.js`: show data, cue and scene playback, mixing and DMX rendering
-- `lib/output.js`: Art-Net, sACN and Enttec packets
-- `lib/profiles.js`: fixture types
-- `lib/midi.js`: MIDI input and clock (CoreMIDI, through the optional `@julusian/midi` module)
-- `lib/mvr.js`: MVR (zip + XML) reader
-- `lib/propresenter.js`: ProPresenter network API client
-- `lib/osc.js`: OSC receiver (UDP, messages and bundles)
-- `public/geom.js`: stage geometry (positions, beam directions, screen hits), shared by the server and the 3D view
-- `public/audio/`: tracks engine
-  - `engine.js`: playback, routing, vocal chain
-  - `pvcore.js`: key/tempo change (phase vocoder)
+**How it fits together:** every change is an **action** (`{ type: 'cue.record', … }`) sent to `POST /api/action`. The engine applies it to the show and the runtime state, the server saves and broadcasts the new state to every screen over server-sent events (`/api/events`), and the DMX loop renders the look about 40 times a second.
+
+### Server (`lib/`)
+
+| Path | What it is |
+|---|---|
+| `lib/engine/index.js` | `Engine`: holds the show and runtime state; `dispatch(action)` runs an action and reports whether the show changed |
+| `lib/engine/actions/*.js` | The actions, one file per area: `cues`, `scenes`, `looks`, `songs`, `tracks`, `programmer`, `presets`, `effects`, `pads`, `patch`, `live`, `palette`, `osc`, `propresenter`, `show`. Each action runs with `this` = the engine |
+| `lib/engine/*.js` | Engine methods, mixed into `Engine.prototype` by area: `looks` (mixing and the final look), `playback` (cue fades), `live` (busking and effects), `tricks`, `screens`, `triggers` (MIDI/OSC learn), `capture`, `patch`, `state` (DMX rendering and what screens get), `defaults`, `util` |
+| `lib/server/app.js` | `App`: wires engine, store, history, auth and devices; runs actions with permission checks and undo |
+| `lib/server/routes.js` | HTTP routes (actions, uploads, events, assets) |
+| `lib/server/store.js` | Saving, backups, snapshots, logs |
+| `lib/server/history.js` | Undo / redo |
+| `lib/server/auth.js` | PINs and roles |
+| `lib/server/devices.js` | Output, MIDI, ProPresenter, OSC and DMX input, connected to the engine |
+| `lib/server/hub.js` | Live updates to every screen |
+| `lib/output.js`, `lib/usbdmx.js` | Art-Net, sACN and Enttec packets; finding the USB-DMX interface |
+| `lib/dmxinput.js` | Art-Net / sACN input (merge and backup) |
+| `lib/midi.js`, `lib/timecode.js` | MIDI in/out and clock; MIDI timecode |
+| `lib/profiles.js`, `lib/fixtures.js` | Fixture types; GDTF and Open Fixture Library import |
+| `lib/mvr.js`, `lib/propresenter.js`, `lib/osc.js` | MVR reader; ProPresenter client (streaming and polling); OSC receiver |
+| `server.js` | Entry point (also run by the desktop app in a supervised process) |
+
+### Browser (`public/`)
+
+- `public/js/core.js`: shared state (`S`), the server connection, `act()` to send actions, and a small event bus (`on('state' | 'runtime' | 'live', fn)`). It imports nothing, so modules can load in any order.
+- `public/js/*.js`: one module per screen or feature (`live`, `program`, `songs`, `tracks`, `fx`, `patch`, `setup`, `wizard`, `testpanel`, `access`, `history`…). `main.js` imports them all and starts the session.
+- `public/audio/`: the tracks engine.
+  - `engine.js`: playback, scheduled jumps, routing, vocal chain
+  - `timing.js`: bar/beat grid, click and count-in
+  - `midiclock.js`: MIDI clock out
+  - `rendercache.js`: stored renders
+  - `pvcore.js`: key/tempo change (phase vocoder with formant preservation)
   - `tunercore.js`: auto-tune (YIN + PSOLA)
   - worker and worklet wrappers
-- `electron/main.js`: desktop app
-- `.github/workflows/build.yml`: installer builds
-- `public/fxmath.js`: effect maths (waveforms, phase), shared by the server and the browser
-- `public/stage3d.js`: 3D view (three.js, bundled in `public/vendor/three` under its MIT licence)
-- `public/`: the browser app (plain HTML, CSS and JS, with no build step)
+- `public/geom.js`, `public/fxmath.js`: stage geometry and effect maths, shared by the server and the browser.
+- `public/stage3d.js`: 3D view (three.js, bundled in `public/vendor/three` under its MIT licence).
+
+### Desktop app (`electron/`)
+
+- `main.js`: window, menu, power-save blocker
+- `supervisor.js`: runs the server in a utility process and restarts it if it stops
+- `updater.js`: automatic updates from GitHub Releases
+
+`.github/workflows/build.yml` runs the unit and UI tests and builds the installers.
+
+### Adding a feature
+
+1. Add an action in the right `lib/engine/actions/*.js` file. Return `{ show: true }` if it changes the saved show.
+2. If only admins may use it, add its prefix to `ADMIN_PREFIX` in `lib/server/auth.js`. Volunteer actions go in `VOLUNTEER`.
+3. Call it from the browser with `act('my.action', { … })`, and redraw in an `on('state')` / `on('runtime')` handler.
+4. Add a test in `test/`.

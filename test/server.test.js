@@ -102,6 +102,8 @@ test('PIN roles: volunteer runs, operator programs, admin patches', () => {
 test('required roles', () => {
   assert.strictEqual(requiredRole('cue.go'), 'volunteer');
   assert.strictEqual(requiredRole('pad.press'), 'volunteer');
+  assert.strictEqual(requiredRole('fixture.identify'), 'operator');
+  assert.strictEqual(requiredRole('fixture.delete'), 'admin');
   assert.strictEqual(requiredRole('cue.record'), 'operator');
   assert.strictEqual(requiredRole('history.undo'), 'operator');
   assert.strictEqual(requiredRole('fixture.add'), 'admin');

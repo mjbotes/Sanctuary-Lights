@@ -32,6 +32,12 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: npm test
+      # Browser smoke test: starts the server and clicks through the main screens in Chromium
+      - name: Install Playwright with Chromium
+        run: npm install --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - run: npm run test:ui
 
   build:
     needs: test
