@@ -2,6 +2,7 @@
 
 A simple, free lighting controller for churches. It runs on a Mac, and volunteers run it from a web browser on that Mac **or from an iPad or phone** on the same Wi-Fi.
 
+- **Light this song for me:** one tap gives every section of a song a look made from your lights and the song's colours. A demo song, *Graves Into Gardens*, shows a complete design from the grave to the garden.
 - **Songs that follow your backing tracks:** plan the lights for every Intro, Verse, Chorus and Bridge. **Playback** (MultiTracks) or **Ableton Live** triggers them over MIDI, or an operator taps them live, or a mix of both.
 - **3D stage view:** load your church as a 3D model (`.glb`, `.gltf`, `.obj`, `.3ds`), or import a whole rig from an **MVR** file. You see real coloured beams while you program and run the service.
 - **FX & Presets:** dimmer/colour/position/beam presets that cues stay linked to, about 25 ready-made effects (including moving-head circles, figure 8, ballyhoo and sweeps), and an effect builder with waveforms, phase spread, groups and wings, and **selection tricks** (sort, shift, shuffle, block, groups, wings, width/parts, and From→To spreads for phase, speed, fade, delay and values).

@@ -64,7 +64,7 @@ function renderSongLive() {
         const pad = h('button', {
           className: `pad${i === curI ? ' cur' : ''}${i === curI + 1 ? ' next' : ''}${look ? '' : ' nolook'}`,
           onclick: () => act('section.go', { songId: song.id, id: sec.id }),
-        }, h('b', {}, sec.name), h('small', {}, look ? look.name : 'keeps current lights'), h('small', {}, sec.trigger ? trigLabel(sec.trigger) : ''));
+        }, h('b', {}, sec.name), h('small', {}, look ? (look.name.startsWith(`${song.name} · `) ? look.name.slice(song.name.length + 3) : look.name) : 'keeps current lights'), h('small', {}, sec.trigger ? trigLabel(sec.trigger) : ''));
         pad.style.setProperty('--lc', look ? look.color : '#444');
         return pad;
       })
@@ -189,17 +189,23 @@ function renderLooks() {
     return;
   }
   const base = S.runtime.base || {};
-  list.replaceChildren(
-    ...S.show.looks.map((l) =>
+  // Looks made for one song ("Song · Chorus") are grouped under the song, showing the part after " · "
+  const groups = new Map([['', []]]);
+  for (const l of S.show.looks) {
+    const i = l.name.indexOf(' · ');
+    const g = i > 0 ? l.name.slice(0, i) : '';
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(l);
+  }
+  const row = (l, prefix) =>
       h('div', { className: `lookrow${base.kind === 'look' && base.lookId === l.id ? ' cur' : ''}` },
         h('span', { className: 'sw', style: { background: l.color, boxShadow: `0 0 8px ${l.color}` } }),
-        h('input', { value: l.name, onchange: (e) => act('look.edit', { id: l.id, name: e.target.value }) }),
+        h('input', { value: prefix ? l.name.slice(prefix.length + 3) : l.name, title: l.name, onchange: (e) => act('look.edit', { id: l.id, name: prefix ? `${prefix} · ${e.target.value}` : e.target.value }) }),
         h('span', { className: 'acts' },
           h('button', { className: 'btn', title: 'Show this look on stage', onclick: () => act('look.apply', { id: l.id }) }, 'Show'),
           h('button', { className: 'btn', title: 'Replace with what is on stage now', onclick: () => confirm(`Replace "${l.name}" with what is on stage now? Every song using it will change.`) && act('look.update', { id: l.id, fixtures: [...S.sel] }) }, 'Update'),
-          h('button', { className: 'btn warn', onclick: () => confirm(`Delete look "${l.name}"? Sections using it will keep the current lights instead.`) && act('look.delete', { id: l.id }) }, '✕')))
-    )
-  );
+          h('button', { className: 'btn warn', onclick: () => confirm(`Delete look "${l.name}"? Sections using it will keep the current lights instead.`) && act('look.delete', { id: l.id }) }, '✕')));
+  list.replaceChildren(...[...groups].flatMap(([g, looks]) => (looks.length ? [g ? h('div', { className: 'lookgroup' }, g) : null, ...looks.map((l) => row(l, g))] : [])).filter(Boolean));
 }
 $('#recLook').onclick = async () => {
   const name = await ask('Name for this look (e.g. "Chorus", "Verse", "Bridge build")');

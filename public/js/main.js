@@ -30,6 +30,7 @@ import './wizard.js';
 import './testpanel.js';
 import './parts.js';
 import './help.js';
+import './design.js';
 import { $, S, on } from './core.js';
 import { startSession } from './access.js';
 import { renderRuntime } from './live.js';

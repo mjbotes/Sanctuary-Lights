@@ -76,7 +76,7 @@ Blinking works even in blackout, so you can test without changing anything else.
 1. **Patch tab → Arrange stage:** drag the lights to where they hang, as seen from the audience.
 2. **Program tab:** tap some lights, set a colour and intensity, then **Save as scene** or record a look (Songs tab → **+ Record from stage**). See [Looks and cues](looks-and-cues.md).
 3. Make looks called **Verse**, **Chorus** and **Bridge**. Song sections with those names use them automatically.
-4. **Songs tab:** add a song with its sections. Tap through them, and the lights follow.
+4. **Songs tab:** add a song with its sections, then tap **✨ Light this song for me** and **▶ Preview**. Or tap **+ Demo song** to see *Graves Into Gardens* fully designed.
 5. **Setup → Service parts:** record a **Hosting** and a **Sermon** look. See [Service parts](service-parts.md).
 
 Next: [Connecting lights and other gear](connections.md).
