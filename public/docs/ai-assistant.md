@@ -61,6 +61,7 @@ Copy the `claude mcp add …` line from Setup and run it in a terminal. Claude C
 | set_master | Master level and blackout |
 | add_schedule | A weekly scheduled change (admin) |
 | practice | Practice mode on / off (keep or throw away what was tried) |
+| get_service_report | What happened during a service (songs, timings, parts, problems), e.g. "How did Sunday go?" |
 | panic / undo | As the buttons |
 | run_action | Anything else the app can do, for advanced use |
 

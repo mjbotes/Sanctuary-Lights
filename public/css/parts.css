@@ -98,3 +98,24 @@ body[data-role="volunteer"] #practiceBtn { display: none; }
 .ctl-row span { color: var(--muted); }
 .ctl-learn .librow.learning { background: #2a2410; }
 .ctl-learn { max-height: 380px; overflow: auto; margin-top: 6px; }
+.take-rec { color: #ff5050; font-weight: 800; letter-spacing: .06em; animation: recblink 1s steps(2) infinite; }
+@keyframes recblink { 50% { opacity: .35; } }
+
+/* Service reports */
+.report { margin-top: 8px; font-size: 13px; }
+.report h3 { margin: 6px 0; font-size: 15px; }
+.report .bad { color: #ff8a80; }
+.report .ok { color: var(--go-hi); }
+.report-songs { padding-left: 20px; margin: 6px 0 10px; }
+.report-tl td { padding: 4px 8px; vertical-align: top; }
+.report-tl td:first-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.report-tl .by { color: var(--muted); font-size: 12px; }
+.report-tl tr.k-problem td, .report-tl tr.k-panic td { color: #ff8a80; }
+.report-tl tr.k-fixed td { color: var(--go-hi); }
+.report-tl tr.k-song td:nth-child(3) { font-weight: 700; }
+#reportBox select { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px; color: var(--text); }
+@media print {
+  body.printing-report * { visibility: hidden; }
+  body.printing-report #reportPrint, body.printing-report #reportPrint * { visibility: visible; color: #000 !important; }
+  body.printing-report #reportPrint { position: absolute; left: 0; top: 0; width: 100%; }
+}

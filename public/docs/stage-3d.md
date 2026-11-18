@@ -26,6 +26,17 @@ Without a model, a simple stage block is shown, sized under **Stage size**.
 - Lights you haven't placed hang at 6 m above their 2D position.
 - Moving heads follow their pan, tilt and zoom.
 
+## Aim moving heads by tapping (focus points)
+
+1. Select the moving heads (Program tab: tap them, or a group).
+2. In the 3D view, choose what to aim at: **at a person** (1.2 m above the spot, the default), **on the floor**, or **above a person**. Then tap **🎯 Aim movers**.
+3. Tap the spot on the stage: the pulpit, the baptism pool, the worship leader's mic. Each moving head works out its own pan and tilt to point there.
+4. Name it to save it as a **focus point** (e.g. *Pulpit*), or cancel to keep it just for now.
+
+A focus point is a **Position** preset (FX & Presets) that stores the *place*, not pan/tilt numbers. Looks and cues using it stay on that place even if a light is moved or re-hung: move the light in the 3D view and it re-aims by itself. To move the place itself, aim again and save with the same name.
+
+This needs the lights placed in the 3D view at roughly their real positions.
+
 ## Importing a rig (MVR)
 
 Consoles, CAD and visualisers (Vectorworks, Capture, grandMA3, Depence…) export **MVR** files. **Import MVR…** reads every light's name, position, aim and DMX address, plus stage and truss geometry. Fixture types in the file (GDTF) come in automatically; otherwise you choose a type for each kind of light.

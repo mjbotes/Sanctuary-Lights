@@ -47,6 +47,12 @@ Usually you only switch the **service parts**, and the rest happens by itself:
 - Tap **Post-service** (if you have it), or a house-lights look.
 - Changes you made during the service are saved automatically. If you changed something by mistake, **Undo** (↶ at the top) or restore a **snapshot** in Setup. See [Safety](safety.md).
 - Turn the lights off at the end of the day, then the computer.
+- **Look at the service report** (Setup → Service reports). It shows:
+  - every song with its start time and how long it ran
+  - each section and service part, and what caused it: a tap, MIDI from the tracks, ProPresenter, the schedule, the controller…
+  - any problems: ProPresenter or USB-DMX dropping out, DMX output errors, Panic
+
+  It's useful for finding out what went wrong (or right), and for planning next week. **Print** gives a clean page. Reports are kept for 90 days.
 
 ## Practice mode: rehearse without touching the lights
 
