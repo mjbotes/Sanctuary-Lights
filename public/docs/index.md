@@ -15,7 +15,8 @@ Sanctuary Lights runs your church's lights. It can follow your backing tracks an
 3. [Looks, cues and scenes](looks-and-cues.md): add your lights, make looks, and build a cue list.
 4. [Songs](songs.md): plan lights per song section, driven by Playback, Ableton or a volunteer.
 5. [Service parts](service-parts.md): worship, hosting, sermon, videos, baptism…
-6. [ProPresenter](propresenter.md): follow slides, dim for videos, and match screen colours.
+6. [Service order, Planning Center and schedule](service-order.md): import Sunday's plan, step through the service, and set lights that change by themselves.
+7. [ProPresenter](propresenter.md): follow slides, dim for videos, and match screen colours.
 
 ## Going further
 

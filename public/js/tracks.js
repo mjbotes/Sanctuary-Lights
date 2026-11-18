@@ -138,7 +138,7 @@ async function syncHost() {
 
 function renderTracks() {
   if (!S.show) return;
-  const songs = S.show.songs;
+  const songs = S.show.songs.filter((x) => !x.archived);
   $('#tkSongs').replaceChildren(...(songs.length ? songs.map((s, n) => h('div', { className: `cuerow songrow${s.id === S.runtime.songId ? ' cur' : ''}`, onclick: () => act('song.select', { id: s.id }) },
     h('span', { className: 'n' }, n + 1), h('span', {}, s.name),
     h('span', { className: 'f' }, `${keyLabel(songKeyNow(s), s.minor)}${s.stems.length ? ` · ${s.stems.length} trk` : ''}`)))
@@ -300,7 +300,7 @@ function tracksRuntime() {
   renderVocal();
   const song = S.show.songs.find((x) => x.id === S.runtime.songId);
   for (const r of $$('#tkSongs .songrow')) r.classList.remove('cur');
-  const i = S.show.songs.indexOf(song);
+  const i = S.show.songs.filter((x) => !x.archived).indexOf(song);
   if (i >= 0 && $('#tkSongs').children[i]) $('#tkSongs').children[i].classList.add('cur');
   // Section buttons
   const sb = $('#tkSections');

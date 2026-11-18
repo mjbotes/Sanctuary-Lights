@@ -16,6 +16,66 @@ On the **Songs** tab:
 
 > **Tip:** make looks called Intro, Verse, Pre-Chorus, Chorus, Bridge, Tag and Outro once, and every new song is lit as soon as you add its sections.
 
+## Program a song once, it stays programmed
+
+Everything you set up for a song (sections, looks, fades, colours, triggers, tracks) is kept for good:
+
+- **Remove from set list** (song editor) moves the song to the **Song library** under the set list, with all its lighting. Tap **+ Set list** to bring it back. **×** in the library deletes it for good.
+- **Adding a song you've programmed before brings that song back, already lit, instead of a blank copy.** This works however it comes in: **+ Song**, Planning Center, a ProPresenter presentation, the demo button, or a shared file. Names are matched loosely: *Graves Into Gardens (Live)* or *Graves Into Gardens - Acoustic* find *Graves Into Gardens*.
+- **A different arrangement keeps the lighting.** When a plan has the sections in another order, each section keeps its look, fade, trigger and marker. A new *Chorus 4* gets the chorus look, and a *Tag* that comes back after a few weeks gets the look it had.
+
+## Let it light the song for you
+
+Pick the song and tap **✨ Light this song for me** (under NEXT). Every section gets a look made from your lights and the song's colours:
+
+| Section | What it gets |
+|---|---|
+| **Intro** | Low and atmospheric in the tertiary colour, slowly breathing |
+| **Verse** | Faces lit warm, the band in the primary colour, calm |
+| **Pre-Chorus** | Brighter, the secondary colour, a soft chase |
+| **Chorus** | Everything up, primary and secondary, moving heads moving |
+| **Bridge** | Tertiary, front lower, moving heads circling |
+| **Tag / Vamp** | Primary and secondary alternating |
+| **Instrumental** | A palette chase |
+| **Outro** | Soft, house lights up a little |
+
+How it works:
+
+- **The lights are sorted by role.**
+  - Lights downstage (or named *Front*) light faces in warm white, never coloured, so people stay visible.
+  - Colour lights upstage take the song's palette.
+  - Moving heads move in the big moments.
+  - House lights stay low; pulpit specials stay off.
+- **Sections of the same kind share a look**, e.g. *Way Maker · Chorus*. The looks are grouped under the song in the Looks list.
+- **Colours stay linked to the palette:** change the song's P / S / T swatches and the whole design re-colours.
+- **Tweak anything:** show a look, adjust it on the Program tab, then **Update**. Tapping ✨ again remakes the song's looks from scratch.
+
+## Preview a song
+
+**▶ Preview** steps through every section, four bars each at the song's BPM (4–12 seconds), so you can watch the whole design before Sunday. Switch the stage view to **3D** to see the beams. Tap **■ Stop preview** to stop.
+
+## The demo song: Graves Into Gardens
+
+**+ Demo song** (above the set list) adds *Graves Into Gardens* with a complete design that tells the story of the song, from the grave to the garden:
+
+- **Palette:** gold (resurrection), garden green, and a deep violet for the grave.
+- **Intro and verses:** almost dark and cold violet, with a first hint of gold in Verse 2.
+- **Choruses:** warm and open, gold everywhere.
+- **Interlude:** back to violet, with a slow heartbeat pulse.
+- **Bridges 1 → 2 → 3:** green grows out of the dark three times. Bridge 3 is the garden: everything up, gold and green, moving and sparkling.
+- **Outro:** soft gold and green, house lights coming up.
+
+It contains the song's structure only, no lyrics or audio. Set the key and BPM from your chart, and change the sections to match your arrangement. The demo show (Setup → **Load demo**) includes it.
+
+## Share a song with another church or campus
+
+**Export song…** (in the song editor) saves the song, its sections, colours and looks as a `.slsong.json` file. **Import song…** (under the set list) opens one:
+
+- **Same lights (same names):** the looks come in exactly as they were.
+- **Different lights:** the design is rebuilt on your lights, with the same levels per role (front, back, moving heads, house), the same palette colours and the same effects.
+
+Importing a song with a name you already have updates that song. **Undo** works if that wasn't what you wanted.
+
 ## Run a song
 
 Pick the song in the set list (or let the tracks or ProPresenter pick it). Then:

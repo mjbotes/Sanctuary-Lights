@@ -13,6 +13,7 @@ const GUIDES = [
   ['looks-and-cues.md', 'Looks, cues and scenes'],
   ['songs.md', 'Songs'],
   ['service-parts.md', 'Service parts'],
+  ['service-order.md', 'Service order, Planning Center, schedule'],
   ['propresenter.md', 'ProPresenter'],
   ['live-effects.md', 'Live control, pads and effects'],
   ['tracks.md', 'Tracks'],

@@ -12,7 +12,8 @@ function render() {
   const cues = S.show.cues;
   const songSel = h('select', { className: 'simple-song', onchange: (e) => e.target.value && act('song.select', { id: e.target.value }) },
     h('option', { value: '' }, S.show.songs.length ? 'Pick a song…' : 'No songs'),
-    ...S.show.songs.map((s) => h('option', { value: s.id, selected: s.id === rt.songId }, s.name)));
+    ...S.show.songs.filter((s) => !s.archived).map((s) => h('option', { value: s.id, selected: s.id === rt.songId }, s.name)),
+    S.show.songs.some((s) => s.archived) ? h('optgroup', { label: 'Song library' }, ...S.show.songs.filter((s) => s.archived).map((s) => h('option', { value: s.id }, s.name))) : '');
 
   const parts = [];
   if (song && song.sections.length) {
