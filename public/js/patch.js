@@ -61,10 +61,14 @@ function renderProfiles() {
     h('div', { className: 'proflist' },
       ...list.map((p) =>
         h('div', { className: 'profrow' },
-          h('b', {}, p.name), h('code', { title: p.channels }, p.channels),
+          h('b', {}, p.name), p.source ? h('span', { className: 'src' }, p.source) : null,
+          p.wheel ? h('span', { className: 'wheel', title: p.wheel.map((s) => s.name).join(', ') }, ...p.wheel.map((s) => h('i', { style: { background: s.color || '#888' } }))) : null,
+          h('code', { title: p.channels }, p.channels),
+          p.builtin ? null : h('select', { title: 'Intensity curve', onchange: (e) => act('profile.save', { id: p.id, name: p.name, curve: e.target.value, ...(p.imported ? {} : { channels: p.channels }) }) },
+            ...[['linear', 'Linear'], ['square', 'Tungsten (square)'], ['scurve', 'S-curve'], ['led', 'LED (smooth)']].map(([v, l]) => h('option', { value: v, selected: (p.curve || 'linear') === v }, l))),
           p.builtin
             ? h('button', { className: 'btn small', title: 'Copy into a new custom type', onclick: () => editProfile({ name: `${p.name} (copy)`, channels: p.channels }) }, 'Copy')
-            : [h('button', { className: 'btn small', onclick: () => editProfile(p) }, 'Edit'),
+            : [p.imported ? null : h('button', { className: 'btn small', onclick: () => editProfile(p) }, 'Edit'),
                h('button', { className: 'btn small warn', onclick: () => confirm(`Delete type "${p.name}"?`) && act('profile.delete', { id: p.id }) }, '✕')]
         )
       )

@@ -25,6 +25,7 @@ import './history.js';
 import './simple.js';
 import './safety.js';
 import './updates.js';
+import './lighting.js';
 import { $, S, on } from './core.js';
 import { startSession } from './access.js';
 import { renderRuntime } from './live.js';

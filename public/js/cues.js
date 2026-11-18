@@ -1,5 +1,6 @@
 // Cues & Scenes tab: editing the cue list and scenes.
 import { $, S, act, h } from './core.js';
+import { fmtTc, parseTc } from './lighting.js';
 
 // ----- cues & scenes tab --------------------------------------------------
 function cell(input) {
@@ -8,7 +9,7 @@ function cell(input) {
 function renderCueTable() {
   const tb = $('#cueTable');
   if (!S.show.cues.length) {
-    tb.replaceChildren(h('tr', {}, h('td', { colSpan: 5, className: 'hint' }, 'No cues yet.')));
+    tb.replaceChildren(h('tr', {}, h('td', { colSpan: 9, className: 'hint' }, 'No cues yet.')));
     return;
   }
   tb.replaceChildren(
@@ -17,8 +18,17 @@ function renderCueTable() {
         h('td', {}, h('button', { className: 'btn small', title: 'Go to this cue', onclick: () => act('cue.goto', { id: c.id }) }, i + 1)),
         cell(h('input', { value: c.name, onchange: (e) => act('cue.edit', { id: c.id, name: e.target.value }) })),
         cell(h('input', { type: 'number', min: 0, step: 0.5, value: c.fade, onchange: (e) => act('cue.edit', { id: c.id, fade: e.target.value }) })),
+        cell(h('input', { type: 'number', min: 0, step: 0.5, value: c.fadeDown ?? '', placeholder: '=', onchange: (e) => act('cue.edit', { id: c.id, fadeDown: e.target.value }) })),
+        cell(h('input', { type: 'number', min: 0, step: 0.5, value: c.delay ?? '', placeholder: '0', onchange: (e) => act('cue.edit', { id: c.id, delay: e.target.value }) })),
+        cell(h('input', { type: 'number', min: 0, step: 0.5, value: c.follow ?? '', placeholder: '—', title: 'Seconds after this cue finished (empty = wait for GO)', onchange: (e) => act('cue.edit', { id: c.id, follow: e.target.value }) })),
+        cell(h('input', { className: 'tc', value: Number.isFinite(c.tc) ? fmtTc(c.tc) : '', placeholder: 'hh:mm:ss:ff', onchange: (e) => {
+          const v = e.target.value.trim() === '' ? '' : parseTc(e.target.value);
+          if (v === null) return alert('Use hh:mm:ss:ff, e.g. 00:01:30:00');
+          act('cue.edit', { id: c.id, tc: v });
+        } })),
         cell(h('input', { value: c.notes || '', placeholder: 'note for operator', onchange: (e) => act('cue.edit', { id: c.id, notes: e.target.value }) })),
         h('td', { className: 'acts' },
+          S.show.settings.tracking ? h('label', { className: 'check plain', title: 'Block: this cue does not take anything from the cues before it', style: { fontSize: '11px' } }, h('input', { type: 'checkbox', checked: !!c.block, onchange: (e) => act('cue.edit', { id: c.id, block: e.target.checked }) }), 'Block') : null,
           h('button', { className: 'btn', title: 'Move up', onclick: () => act('cue.move', { id: c.id, dir: -1 }) }, '↑'),
           h('button', { className: 'btn', title: 'Move down', onclick: () => act('cue.move', { id: c.id, dir: 1 }) }, '↓'),
           h('button', { className: 'btn warn', title: 'Delete', onclick: () => confirm(`Delete cue "${c.name}"?`) && act('cue.delete', { id: c.id }) }, '✕'))

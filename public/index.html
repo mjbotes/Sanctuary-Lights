@@ -276,7 +276,8 @@
     <div class="two-col">
       <div class="panel">
         <div class="panelhead"><h2>Cue list</h2><button class="btn small" data-act="cue.release">Fade out cue list</button></div>
-        <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Fade (s)</th><th>Notes</th><th></th></tr></thead><tbody id="cueTable"></tbody></table>
+        <div class="tblwrap"><table class="tbl cuetbl"><thead><tr><th>#</th><th>Name</th><th title="Fade time (up)">Fade</th><th title="Fade-down time for lights going down (empty = same as fade)">Down</th><th title="Wait before the cue starts changing">Delay</th><th title="Go to the next cue automatically, this many seconds after this one finished">Follow</th><th title="Timecode: the cue goes when MIDI timecode passes this time">Timecode</th><th>Notes</th><th></th></tr></thead><tbody id="cueTable"></tbody></table></div>
+        <label class="check plain" style="margin-top:8px"><input type="checkbox" id="trackingToggle"> Tracking cue list: cues store only what they change, the rest carries on from the cues before (tick "Block" on a cue to stop that)</label>
         <p class="hint">Record cues on the Program tab. Tap a cue's number to jump to it.</p>
       </div>
       <div class="panel">
@@ -310,7 +311,8 @@
         <table class="tbl"><thead><tr><th>Name</th><th>Type</th><th>Univ</th><th>Addr</th><th></th></tr></thead><tbody id="fixTable"></tbody></table>
       </div>
       <div class="panel">
-        <div class="panelhead"><h2>Fixture types</h2></div>
+        <div class="panelhead"><h2>Fixture types</h2><label class="btn small primary">Import GDTF / OFL…<input type="file" id="fixtureFile" accept=".gdtf,.json" multiple hidden></label></div>
+        <p class="hint">Get your lights' files from <b>gdtf-share.com</b> (GDTF) or <b>open-fixture-library.org</b> (download "OFL JSON"). They bring the right channels, colour wheels, gobos and shutter settings.</p>
         <div id="profileList"></div>
         <form id="profForm" class="form">
           <h3 id="profFormTitle">New fixture type</h3>
@@ -446,6 +448,19 @@
           </fieldset>
           <label>Lights pointing at screens
             <select name="screenProtect"><option value="warn">Warn (red in the 3D view)</option><option value="block">Block: switch those lights off</option><option value="off">Ignore</option></select></label>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="tcEnabled"> Follow MIDI timecode (MTC)</label></legend>
+            <div id="tcStatus" class="hint">No timecode received.</div>
+            <p class="hint">Send MTC from Ableton, Playback, QLab or a video server to the MIDI input. Cues with a timecode go when it passes them; songs with a start timecode (Tracks tab) follow their section markers. Jumping around the timeline puts the right cue / section up.</p>
+          </fieldset>
+          <fieldset>
+            <legend><label class="check"><input type="checkbox" name="inputEnabled"> Input from another lighting desk</label></legend>
+            <div class="row">
+              <label>Listen for <select name="inputProtocol"><option value="artnet">Art-Net</option><option value="sacn">sACN</option></select></label>
+              <label>Mode <select name="inputMode"><option value="merge">Merge: highest level wins</option><option value="backup">Backup: pass the desk through, take over when it stops</option></select></label>
+            </div>
+            <div id="dmxInStatus" class="hint"></div>
+          </fieldset>
           <label>Frames per second <input name="fps" type="number" min="10" max="44"></label>
           <button class="btn primary">Save output settings</button>
           <div id="outErr" class="err"></div>
@@ -542,6 +557,14 @@
     </table>
     <p class="hint">Shortcuts work on every tab, except while typing in a box.</p>
     <div class="row" style="justify-content:flex-end"><button value="ok" class="btn primary">Close</button></div>
+  </form>
+</dialog>
+<dialog id="fixtureDialog" class="wide">
+  <form method="dialog">
+    <h3>Import fixture types</h3>
+    <p class="hint">Tick the modes your lights are set to (the mode is on the light's menu / manual).</p>
+    <div id="fixtureList" class="fixlist"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary">Import</button></div>
   </form>
 </dialog>
 <dialog id="mvrDialog" class="wide">

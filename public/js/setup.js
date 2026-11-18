@@ -21,6 +21,11 @@ function renderSettings() {
   f.enttecPort.value = s.enttecPort || '';
   f.enttecUniverse.value = s.enttecUniverse || 1;
   f.fps.value = s.fps;
+  f.tcEnabled.checked = !!s.tcEnabled;
+  const inp = s.input || {};
+  f.inputEnabled.checked = !!inp.enabled;
+  f.inputProtocol.value = inp.protocol || 'artnet';
+  f.inputMode.value = inp.mode || 'merge';
   f.noteBase.value = s.noteBase ?? 36;
   const pp = s.pp || {};
   f.ppEnabled.checked = !!pp.enabled;
@@ -76,6 +81,8 @@ $('#setForm').addEventListener('submit', async (e) => {
     artnet: f.artnet.checked, artnetTarget: f.artnetTarget.value, artnetBase: Number(f.artnetBase.value),
     sacn: f.sacn.checked, sacnInterface: f.sacnInterface.value, sacnUnicast: f.sacnUnicast.value, sacnPriority: f.sacnPriority.value,
     enttec: f.enttec.checked, enttecPort: f.enttecPort.value, enttecUniverse: f.enttecUniverse.value, fps: f.fps.value,
+    tcEnabled: f.tcEnabled.checked,
+    input: { enabled: f.inputEnabled.checked, protocol: f.inputProtocol.value, mode: f.inputMode.value },
     pp: { enabled: f.ppEnabled.checked, host: f.ppHost.value, port: f.ppPort.value, sections: f.ppSections.checked, songs: f.ppSongs.checked, colorMode: f.ppColorMode.value, colorTarget: f.ppColorTarget.value },
     osc: { enabled: f.oscEnabled.checked, port: f.oscPort.value },
     screenProtect: f.screenProtect.value,

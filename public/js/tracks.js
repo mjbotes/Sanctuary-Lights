@@ -3,6 +3,7 @@ import { AudioEngine } from '../audio/engine.js';
 import { $, $$, S, act, actThrottled, h, selected, toast, authHeaders } from './core.js';
 import { bindFader } from './live.js';
 import { upload } from './view3d.js';
+import { fmtTc, parseTc } from './lighting.js';
 
 // ----- Tracks: backing tracks, key/tempo, vocal ------------------------------------
 const KEY_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
@@ -172,6 +173,12 @@ function renderKeyBox() {
       h('b', { className: song.targetBpm && song.targetBpm !== song.bpm ? 'changed' : '' }, target ? `${target} BPM` : 'Set BPM'),
       h('button', { className: 'btn', disabled: !song.bpm, onclick: () => act('song.audio', { id: song.id, targetBpm: (target || 120) + 1 }) }, '+'),
       song.targetBpm && song.targetBpm !== song.bpm ? h('button', { className: 'btn small', onclick: () => act('song.audio', { id: song.id, targetBpm: null }) }, 'Original') : null),
+    h('span', { className: 'lbl', title: 'With "Follow MIDI timecode" on (Setup), the song starts at this timecode and its markers follow it' }, 'Starts at TC'),
+    h('input', { value: Number.isFinite(song.tcStart) ? fmtTc(song.tcStart) : '', placeholder: 'hh:mm:ss:ff', style: { width: '110px' }, onchange: (e) => {
+      const v = e.target.value.trim() === '' ? null : parseTc(e.target.value);
+      if (v === undefined || (v === null && e.target.value.trim())) return toast('Use hh:mm:ss:ff', true);
+      act('song.audio', { id: song.id, tcStart: v });
+    } }),
     h('span', { className: 'lbl', title: 'Program change sent to other apps (SuperRack, Ableton, MainStage) when this song is picked. Choose the MIDI output in Setup.' }, 'MIDI out PC'),
     h('div', { className: 'row' }, pc, h('span', { className: 'lbl' }, 'ch'), ch));
 }

@@ -193,14 +193,24 @@ $('#mvrFile').addEventListener('change', async (e) => {
   if (!j) return;
   if (!j.fixtures.length && !j.models.length) return toast('No lights or geometry found in that file', true);
   $('#mvrSummary').textContent = `${j.fixtures.length} light${j.fixtures.length === 1 ? '' : 's'} and ${j.models.length} 3D object${j.models.length === 1 ? '' : 's'} found.`;
+  const fromFile = new Map((j.profiles || []).map((p) => [p.key, p]));
   $('#mvrTypes').replaceChildren(...j.types.map((t) =>
     h('tr', {}, h('td', {}, t.type), h('td', {}, String(t.count)),
-      h('td', {}, h('select', { 'data-type': t.type }, ...profileOptions(guessProfile(t.type)))))));
+      h('td', {}, h('select', { 'data-type': t.type },
+        ...(fromFile.has(t.type) ? [h('option', { value: `file:${t.type}`, selected: true }, `From the file: ${fromFile.get(t.type).name}`)] : []),
+        ...profileOptions(fromFile.has(t.type) ? null : guessProfile(t.type)))))));
   const dlg = $('#mvrDialog');
   dlg.returnValue = '';
   dlg.onclose = async () => {
     if (dlg.returnValue !== 'ok') return;
     const map = Object.fromEntries($$('#mvrTypes select').map((s) => [s.dataset.type, s.value]));
+    // Fixture types from the GDTF files inside the MVR: import them first
+    const need = [...new Set(Object.values(map).filter((v) => v.startsWith('file:')).map((v) => v.slice(5)))];
+    if (need.length) {
+      const r = await act('profile.import', { profiles: need.map((k) => ({ ...fromFile.get(k), key: k })) });
+      if (!r) return;
+      for (const p of r.added) for (const [type, v] of Object.entries(map)) if (v === `file:${p.key}`) map[type] = p.id;
+    }
     const useModels = $('#mvrModels').checked;
     const res = await act('mvr.apply', {
       fixtures: j.fixtures.map((f) => ({ ...f, profile: map[f.type] })),

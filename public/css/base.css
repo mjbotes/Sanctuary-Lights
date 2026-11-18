@@ -109,3 +109,14 @@ main { flex: 1; overflow: auto; padding: 12px; }
 body[data-role="volunteer"] .badge, body[data-role="volunteer"] #helpBtn { display: none; }
 
 .updbanner { display: flex; gap: 10px; align-items: center; justify-content: center; padding: 8px 14px; background: #1d3352; border-bottom: 1px solid #34578f; font-size: 14px; flex-wrap: wrap; }
+
+.tblwrap { overflow-x: auto; }
+.cuetbl input[type=number] { width: 58px; }
+.cuetbl input.tc { width: 92px; font-variant-numeric: tabular-nums; }
+.fixlist { max-height: 50vh; overflow: auto; display: flex; flex-direction: column; gap: 4px; }
+.fixlist label { display: flex; gap: 8px; align-items: center; padding: 6px 8px; background: var(--panel2); border-radius: 6px; font-size: 13px; }
+.fixlist small { color: var(--muted); margin-left: auto; }
+.profrow select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-size: 11px; color: var(--text); padding: 2px; }
+.profrow .src { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.wheel { display: inline-flex; gap: 2px; }
+.wheel i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; border: 1px solid #0006; }
