@@ -19,3 +19,6 @@
 .part-row .mini.wide input { flex: 1; }
 .part-row .tag { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: 1px 8px; }
 .part-opt { display: block; margin: 4px 0; }
+.partbar .btn.add { padding: 8px 12px; color: var(--muted); border-style: dashed; }
+.wz-card.have { opacity: .6; }
+.wz-card small { color: var(--muted); font-weight: 400; }

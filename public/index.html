@@ -617,6 +617,14 @@
     <button type="button" class="btn primary wz-next">Next</button>
   </div>
 </dialog>
+<dialog id="partDialog" class="wide wizard">
+  <div class="wz-body">
+    <h2>Add a service part</h2>
+    <p class="hint">Pick one to start from. You can rename it and change everything later in Setup → Service parts.</p>
+    <div class="wz-cards" id="partTemplates"></div>
+  </div>
+  <div class="row wz-nav"><span class="grow"></span><button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button></div>
+</dialog>
 <dialog id="prompt"><form method="dialog"><h3 id="promptTitle"></h3><input id="promptInput"><div class="row"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn primary" id="promptOk">OK</button></div></form></dialog>
 <script src="fxmath.js"></script>
 <script src="geom.js"></script>

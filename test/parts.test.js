@@ -171,3 +171,34 @@ test('ProPresenter: a playing video is noticed from the transport time', async (
     server.close();
   }
 });
+
+test('custom parts: a template claims its words, records its look from the stage, and moves', () => {
+  const { e } = setup();
+  midi(e, 37); // Chorus on stage
+  e.dispatch({ type: 'part.save', part: { name: 'Baptism', level: 1, sections: false, screenColor: false, match: 'baptism, baptise' } });
+  e.dispatch({ type: 'part.save', part: { name: 'Offering', sections: false, screenColor: false, match: 'offering, giving, tithe' } });
+  const hosting = e.part('hosting');
+  assert.ok(!/offering|giving/.test(hosting.match), `hosting no longer claims offering: ${hosting.match}`);
+  assert.strictEqual(e.partForPresentation('Offering & giving').name, 'Offering');
+  const bap = e.show.parts.find((p) => p.name === 'Baptism');
+  // Set the stage for the baptism (cool blue at 60%) and record it as the part's look
+  e.dispatch({ type: 'prog.set', fixtures: ['f'], values: { dim: 0.6, red: 0, green: 0.4, blue: 1 } });
+  e.dispatch({ type: 'part.recordLook', id: bap.id });
+  assert.strictEqual(e.rt.partId, bap.id);
+  assert.strictEqual(e.show.looks.find((l) => l.id === bap.lookId).name, 'Baptism');
+  assert.deepStrictEqual(out(e), [153, 0, 102, 255]);
+  // Back to worship: the chorus comes back
+  e.dispatch({ type: 'part.go', id: 'worship' });
+  assert.deepStrictEqual(out(e), [255, 0, 0, 255]);
+  // Re-recording updates the same look
+  e.dispatch({ type: 'prog.set', fixtures: ['f'], values: { dim: 0.3 } });
+  e.dispatch({ type: 'part.recordLook', id: bap.id });
+  assert.strictEqual(e.show.looks.filter((l) => l.name === 'Baptism').length, 1);
+  // Template naming an existing look uses it
+  e.dispatch({ type: 'part.save', part: { name: 'Altar call', lookName: 'Verse', sections: true } });
+  assert.strictEqual(e.show.looks.find((l) => l.id === e.show.parts.at(-1).lookId).name, 'Verse');
+  // Order
+  const n = e.show.parts.length;
+  e.dispatch({ type: 'part.move', id: bap.id, dir: -1 });
+  assert.strictEqual(e.show.parts.findIndex((p) => p.id === bap.id), n - 4);
+});
