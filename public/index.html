@@ -97,6 +97,7 @@
       <div class="panel">
         <div class="panelhead"><h2>Set list</h2><div class="row"><button class="btn small" id="addDemoSong" title="Add the demo song Graves Into Gardens, with a full lighting design">+ Demo song</button><button class="btn small" id="addSong">+ Song</button></div></div>
         <div id="songList" class="cuelist"></div>
+        <details class="songlib" id="songLibrary" hidden></details>
         <div class="row" style="margin-top:6px"><label class="btn small" title="Import a song design shared from another church or campus (.slsong.json)">Import song…<input type="file" id="importSongFile" accept=".json,application/json" hidden></label></div>
         <div class="panelhead"><h2>Service order</h2></div>
         <div class="orderbox"></div>
@@ -147,7 +148,7 @@
           <table class="tbl"><thead><tr><th>Section</th><th>Look</th><th>Fade</th><th>MIDI trigger</th><th></th></tr></thead><tbody id="sectionTable"></tbody></table>
           <div class="row wrap" style="margin-top:12px">
             <button class="btn" id="exportSong" title="Save this song and its looks as a file to share with another church or campus">Export song…</button>
-            <button class="btn warn" id="deleteSong">Delete song</button>
+            <button class="btn warn" id="deleteSong" title="The song stays in the song library with all its lighting">Remove from set list</button>
           </div>
         </div>
       </div>

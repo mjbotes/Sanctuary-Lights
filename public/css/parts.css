@@ -53,3 +53,11 @@
 .sched-row .day { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
 .sched-row .day.on { background: #1f3a5c; border-color: #4a8fe0; color: #fff; }
 .orderbox.big .order-header { flex-basis: 100%; margin: 6px 0 0; }
+
+/* Song library */
+.songlib { margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: #12151c; font-size: 13px; }
+.songlib summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.songlib input { width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px; color: var(--text); margin-bottom: 6px; }
+.librow { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-top: 1px solid var(--line); }
+.librow span { flex: 1; }
+.librow small { color: var(--muted); }

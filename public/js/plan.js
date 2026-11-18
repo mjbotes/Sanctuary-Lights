@@ -77,8 +77,10 @@ async function quickImport() {
 async function doImport(type, plan) {
   toast('Reading the plan from Planning Center…');
   const design = lsGet('pcoDesign') !== '0';
-  const r = await api('/api/pco/import', { type, plan, design });
-  toast(`"${r.title}" imported: ${r.songs} song${r.songs === 1 ? '' : 's'} (${r.created} new${r.designed ? `, ${r.designed} lit automatically` : ''}), ${r.items} items in the service order.`);
+  const setOnly = lsGet('pcoSetOnly') !== '0';
+  const r = await api('/api/pco/import', { type, plan, design, setOnly });
+  const known = r.songs - r.created;
+  toast(`"${r.title}": ${r.songs} song${r.songs === 1 ? '' : 's'}. ${known ? `${known} already programmed (lighting kept${r.rearranged ? `, ${r.rearranged} with this week's arrangement` : ''}). ` : ''}${r.created ? `${r.created} new${r.designed ? `, lit automatically` : ''}. ` : ''}${r.items} items in the service order.`);
 }
 
 // ----- Setup → Planning Center ------------------------------------------------------------
@@ -119,10 +121,11 @@ async function renderPco() {
     h('p', { className: 'on-ok' }, '● Connected'),
     h('div', { className: 'row wrap' }, h('label', { className: 'form' }, 'Service type', typeSel), h('label', { className: 'form' }, 'Plan', planSel)),
     h('label', { className: 'check plain' }, design, ' Light new songs automatically (✨ Light this song for me)'),
+    h('label', { className: 'check plain' }, h('input', { type: 'checkbox', checked: lsGet('pcoSetOnly') !== '0', onchange: (e) => lsSet('pcoSetOnly', e.target.checked ? '1' : '0') }), ' Set list = this service only (other songs go to the song library, still lit)'),
     h('div', { className: 'row' },
       h('button', { className: 'btn primary', onclick: () => planSel.value && doImport(typeSel.value, planSel.value).catch((e) => toast(e.message, true)) }, 'Import this plan'),
       h('button', { className: 'btn small warn', onclick: async () => { if (!confirm('Disconnect Planning Center?')) return; await api('/api/pco/disconnect', {}).catch(() => {}); renderPco(); } }, 'Disconnect')),
-    h('p', { className: 'hint' }, 'Importing adds new songs (with their arrangement as sections), puts this service\'s songs at the top of the set list, and fills the service order on the Songs and Volunteer screens. Songs you already have keep their sections and looks.'));
+    h('p', { className: 'hint' }, 'Importing adds new songs with their arrangement as sections, and fills the service order on the Songs and Volunteer screens. Songs you have programmed before (even in the song library, or named slightly differently) keep all their lighting; their sections follow this week\'s arrangement, and new sections get the look of their kind.'));
   try {
     const t = await api('/api/pco/types');
     typeSel.replaceChildren(...t.types.map((x) => h('option', { value: x.id, selected: x.id === lsGet('pcoType') }, x.name)));

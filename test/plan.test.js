@@ -46,23 +46,30 @@ test('Planning Center items become a plan in order, with song details', () => {
   const plan = toPlan(PLAN, ITEMS);
   assert.strictEqual(plan.title, 'Sunday Morning');
   assert.deepStrictEqual(plan.items.map((i) => i.kind), ['media', 'header', 'song', 'song', 'item', 'item', 'item']);
-  assert.deepStrictEqual(plan.items[3].song, { title: 'New Song', key: 'F#m', bpm: 128, sequence: ['Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Outro'] });
+  assert.deepStrictEqual(plan.items[3].song, { id: 's2', title: 'New Song', key: 'F#m', bpm: 128, sequence: ['Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Outro'] });
 });
 
 test('importing a plan builds the set list, the service order and lights new songs', () => {
   const e = new Engine(demoShow());
   e.dispatch({ type: 'demo.addSong', id: 'graves-into-gardens', select: false });
+  const gig = e.show.songs.find((s) => s.name === 'Graves Into Gardens');
+  const looksBefore = Object.fromEntries(gig.sections.map((s) => [s.name, s.lookId]));
   e.dispatch({ type: 'plan.import', plan: toPlan(PLAN, ITEMS) });
   const r = e.lastResult;
-  assert.deepStrictEqual([r.songs, r.created, r.designed], [2, 1, 1]);
-  // Set list: this service's songs first, in order
-  assert.deepStrictEqual(e.show.songs.slice(0, 2).map((s) => s.name), ['Graves Into Gardens', 'New Song']);
+  assert.deepStrictEqual([r.songs, r.created, r.designed, r.rearranged], [2, 1, 1, 1]);
+  // Set list: only this service's songs, in order; the others are kept in the library
+  assert.deepStrictEqual(e.setList().map((s) => s.name), ['Graves Into Gardens', 'New Song']);
+  assert.ok(e.show.songs.find((s) => s.name === 'Example song').archived, 'other songs go to the library');
+  // This week's arrangement, with the lighting that was programmed
+  assert.deepStrictEqual(gig.sections.map((s) => s.name), ['Verse 1', 'Chorus', 'Bridge', 'Chorus 2']);
+  assert.strictEqual(gig.sections[0].lookId, looksBefore['Verse 1'], 'same section keeps its look');
+  assert.strictEqual(gig.sections[1].lookId, looksBefore['Chorus 1'], 'Chorus gets the chorus look');
+  assert.strictEqual(gig.sections[2].lookId, looksBefore['Bridge 1'], 'Bridge gets the bridge look');
+  assert.strictEqual(gig.pcoId, 's1');
   const ns = e.show.songs[1];
   assert.deepStrictEqual(ns.sections.map((s) => s.name), ['Intro', 'Verse 1', 'Chorus', 'Verse 2', 'Chorus 2', 'Outro']);
   assert.deepStrictEqual([ns.key, ns.minor, ns.bpm], [6, true, 128]);
   assert.ok(ns.sections.every((s) => s.lookId), 'new song is lit');
-  // The existing song keeps its own sections
-  assert.strictEqual(e.show.songs[0].sections.length, 13);
   // Service order: video -> Video part, welcome -> Hosting, sermon -> Sermon, prayer -> a note
   const o = e.show.order;
   assert.strictEqual(o.title, 'Sunday Morning');
@@ -185,4 +192,48 @@ test('Planning Center client: connect, list plans and read one (against a preten
   } finally {
     server.close();
   }
+});
+
+test('a song you lit stays lit: library, names, arrangements', () => {
+  const e = new Engine(demoShow());
+  e.dispatch({ type: 'demo.addSong', id: 'graves-into-gardens' });
+  const gig = e.show.songs.find((s) => s.name === 'Graves Into Gardens');
+  const bridge3 = gig.sections.find((s) => s.name === 'Bridge 3');
+  // Tweak a look, remove the song from the set list
+  e.dispatch({ type: 'section.edit', songId: gig.id, id: bridge3.id, fade: 7 });
+  e.dispatch({ type: 'song.delete', id: gig.id });
+  assert.ok(gig.archived && e.show.songs.includes(gig), 'kept in the library');
+  assert.ok(!e.setList().includes(gig));
+  // Adding it again (any spelling) brings the programmed song back, not a blank copy
+  const n = e.show.songs.length;
+  e.dispatch({ type: 'song.add', name: 'Graves into Gardens (Live)' });
+  assert.strictEqual(e.show.songs.length, n);
+  assert.ok(!gig.archived);
+  assert.strictEqual(e.rt.songId, gig.id);
+  assert.strictEqual(gig.sections.find((s) => s.name === 'Bridge 3').fade, 7);
+  // The demo button doesn't reset a tweaked demo
+  e.dispatch({ type: 'demo.addSong', id: 'graves-into-gardens' });
+  assert.strictEqual(gig.sections.find((s) => s.name === 'Bridge 3').fade, 7);
+  // A section that disappears and comes back weeks later gets its look back
+  const tagLook = gig.sections.find((s) => s.name === 'Tag').lookId;
+  e.applyArrangement(gig, ['Intro', 'Verse 1', 'Chorus 1']);
+  e.applyArrangement(gig, ['Intro', 'Verse 1', 'Chorus 1', 'Tag', 'Chorus 4']);
+  assert.strictEqual(gig.sections[3].lookId, tagLook, 'Tag remembered');
+  assert.strictEqual(gig.sections[4].lookId, gig.sections[2].lookId, 'Chorus 4 gets the chorus look');
+  // ProPresenter finds it by a slightly different name
+  e.dispatch({ type: 'song.delete', id: gig.id });
+  e.dispatch({ type: 'pp.slide', presentation: { uuid: 'x', name: 'Graves Into Gardens - Elevation' }, index: 0, group: { name: 'Chorus 1' } });
+  assert.strictEqual(e.rt.songId, gig.id);
+  assert.ok(!gig.archived, 'used again: back in the set list');
+  // Delete forever is still possible
+  e.dispatch({ type: 'song.delete', id: gig.id, permanent: true });
+  assert.ok(!e.show.songs.includes(gig));
+});
+
+test('program change n picks song n of the set list (library songs do not count)', () => {
+  const e = new Engine(demoShow());
+  e.dispatch({ type: 'song.add', name: 'Second' });
+  e.dispatch({ type: 'song.delete', id: e.show.songs[0].id }); // Example song -> library
+  e.dispatch({ type: 'midi.message', data: [0xc0, 0] });
+  assert.strictEqual(e.song(e.rt.songId).name, 'Second');
 });

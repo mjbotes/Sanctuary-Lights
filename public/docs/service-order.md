@@ -22,8 +22,8 @@ In **Setup → Planning Center**, choose the **service type** (e.g. *Sunday Morn
 Importing:
 
 - **adds new songs** with their arrangement as sections, key and BPM. With *Light new songs automatically* ticked, each new song gets a design straight away (see [Songs → Let it light the song for you](songs.md)).
-- **keeps songs you already have** as they are (their sections and looks). It only fills in a missing key or BPM.
-- **puts this service's songs at the top of the set list**, in order.
+- **keeps the lighting of songs you've programmed before**, even if they're in the song library or named slightly differently. Their sections follow this week's arrangement, each keeping its look; new sections get the look of their kind. It only fills in a missing key or BPM.
+- **makes the set list this service's songs, in order.** Other songs move to the song library, still fully lit. Untick *Set list = this service only* to keep them after these instead.
 - **fills the service order** (below).
 
 Import again whenever the plan changes; nothing you programmed is lost.

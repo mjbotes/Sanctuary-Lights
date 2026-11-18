@@ -16,6 +16,14 @@ On the **Songs** tab:
 
 > **Tip:** make looks called Intro, Verse, Pre-Chorus, Chorus, Bridge, Tag and Outro once, and every new song is lit as soon as you add its sections.
 
+## Program a song once, it stays programmed
+
+Everything you set up for a song (sections, looks, fades, colours, triggers, tracks) is kept for good:
+
+- **Remove from set list** (song editor) moves the song to the **Song library** under the set list, with all its lighting. Tap **+ Set list** to bring it back. **×** in the library deletes it for good.
+- **Adding a song you've programmed before brings that song back, already lit, instead of a blank copy.** This works however it comes in: **+ Song**, Planning Center, a ProPresenter presentation, the demo button, or a shared file. Names are matched loosely: *Graves Into Gardens (Live)* or *Graves Into Gardens - Acoustic* find *Graves Into Gardens*.
+- **A different arrangement keeps the lighting.** When a plan has the sections in another order, each section keeps its look, fade, trigger and marker. A new *Chorus 4* gets the chorus look, and a *Tag* that comes back after a few weeks gets the look it had.
+
 ## Let it light the song for you
 
 Pick the song and tap **✨ Light this song for me** (under NEXT). Every section gets a look made from your lights and the song's colours:

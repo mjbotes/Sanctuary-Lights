@@ -19,11 +19,12 @@ const QUICK = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Instrumental
 
 function renderSongs() {
   const list = $('#songList');
-  if (!S.show.songs.length) {
-    list.replaceChildren(h('div', { className: 'empty' }, 'No songs yet. Tap "+ Song".'));
+  const setList = S.show.songs.filter((s) => !s.archived);
+  if (!setList.length) {
+    list.replaceChildren(h('div', { className: 'empty' }, S.show.songs.length ? 'The set list is empty. Add songs back from the library below, or tap "+ Song".' : 'No songs yet. Tap "+ Song".'));
   } else {
     list.replaceChildren(
-      ...S.show.songs.map((s, n) =>
+      ...setList.map((s, n) =>
         h('div', { className: `cuerow songrow${s.id === S.runtime.songId ? ' cur' : ''}`, onclick: () => act('song.select', { id: s.id }) },
           h('span', { className: 'n' }, n + 1), h('span', {}, s.name), h('span', { className: 'f' }, `${s.sections.length} parts`),
           S.editingSong ? h('span', { className: 'row' },
@@ -32,7 +33,29 @@ function renderSongs() {
       )
     );
   }
+  renderLibrary();
   renderSongEditor();
+}
+
+// Songs removed from the set list, with all their lighting: tap to put one back
+function renderLibrary() {
+  const box = $('#songLibrary');
+  if (!box) return;
+  const lib = S.show.songs.filter((s) => s.archived).sort((a, b) => a.name.localeCompare(b.name));
+  box.hidden = !lib.length;
+  if (!lib.length) return;
+  const filter = $('#libFilter') ? $('#libFilter').value.trim().toLowerCase() : '';
+  const open = box.open;
+  box.replaceChildren(
+    h('summary', {}, `Song library (${lib.length})`),
+    h('p', { className: 'hint', style: { margin: '6px 0' } }, 'Songs you have removed from the set list, with all their lighting. Add one back and it is lit straight away.'),
+    lib.length > 8 ? h('input', { id: 'libFilter', placeholder: 'Find a song…', value: filter, oninput: () => renderLibrary() }) : '',
+    ...lib.filter((s) => !filter || s.name.toLowerCase().includes(filter)).map((s) => h('div', { className: 'librow' },
+      h('span', {}, s.name), h('small', {}, `${s.sections.length} parts`),
+      h('button', { className: 'btn small', title: 'Put it back in the set list', onclick: () => act('song.restore', { id: s.id }) }, '+ Set list'),
+      h('button', { className: 'btn small warn', title: 'Delete for good (its looks stay in the Looks list)', onclick: () => confirm(`Delete "${s.name}" for good? Its sections and settings cannot be brought back (except with Undo).`) && act('song.delete', { id: s.id, permanent: true }) }, '×'))));
+  box.open = open;
+  if (filter && $('#libFilter')) { $('#libFilter').focus(); $('#libFilter').setSelectionRange(filter.length, filter.length); }
 }
 
 function renderSongLive() {
@@ -103,7 +126,9 @@ $('#prevSec').onclick = () => curSong() && act('section.go', { songId: curSong()
 $('#addSong').onclick = async () => {
   const name = await ask('Song name');
   if (name === null) return;
-  if (await act('song.add', { name })) {
+  const r = await act('song.add', { name });
+  if (r && r.restored) toast(`"${r.name}" was already programmed: it is back in the set list with its lighting.`);
+  else if (r) {
     S.editingSong = true;
     renderSongEditor();
   }
@@ -125,7 +150,7 @@ $('#songBpm').addEventListener('change', (e) => curSong() && act('song.edit', { 
 $('#songNoteInput').addEventListener('change', (e) => curSong() && act('song.edit', { id: curSong().id, notes: e.target.value }));
 $('#deleteSong').onclick = () => {
   const s = curSong();
-  if (s && confirm(`Delete "${s.name}" and its sections? Looks are kept.`)) act('song.delete', { id: s.id });
+  if (s && confirm(`Remove "${s.name}" from the set list? It stays in the song library with all its lighting, ready for next time.`)) act('song.delete', { id: s.id });
 };
 
 function learnButtons(songId, sectionId, trigger, fallback) {
@@ -154,7 +179,7 @@ function renderSongEditor() {
   if (document.activeElement !== $('#songName')) $('#songName').value = song.name;
   if (document.activeElement !== $('#songNoteInput')) $('#songNoteInput').value = song.notes || '';
   if (document.activeElement !== $('#songBpm')) $('#songBpm').value = song.bpm || '';
-  const idx = S.show.songs.indexOf(song);
+  const idx = S.show.songs.filter((x) => !x.archived).indexOf(song);
   const pcDefault = S.show.settings.pcSelectsSong && !S.show.songs.some((x) => x.trigger && x.trigger.t === 'pc') ? `Program ${idx} (default)` : null;
   $('#songTrig').replaceChildren(learnButtons(song.id, null, song.trigger, pcDefault));
   const nb = S.show.settings.noteBase ?? 36;
