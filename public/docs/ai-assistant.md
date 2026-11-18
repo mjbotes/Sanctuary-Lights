@@ -10,6 +10,8 @@ Examples:
 - "Set the colours of Way Maker to deep blue and magenta."
 - "Every Sunday at 9:30 switch to Pre-service, and black out at 12:30."
 - "What's on stage right now?"
+- "We bought four Chauvet SlimPAR 64s, set to 7 channels. Add them as the side wash from address 100."
+- "Are any lights broken? Which need cleaning?"
 
 ## Safety first
 
@@ -62,6 +64,8 @@ Copy the `claude mcp add …` line from Setup and run it in a terminal. Claude C
 | add_schedule | A weekly scheduled change (admin) |
 | practice | Practice mode on / off (keep or throw away what was tried) |
 | get_service_report | What happened during a service (songs, timings, parts, problems), e.g. "How did Sunday go?" |
+| find_fixture_type / add_fixture_type | Search the fixture library and add a light's mode (admin) |
+| get_light_health / light_problem | Which lights have problems or need cleaning; note a problem or mark it fixed |
 | panic / undo | As the buttons |
 | run_action | Anything else the app can do, for advanced use |
 

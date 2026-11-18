@@ -119,3 +119,45 @@ body[data-role="volunteer"] #practiceBtn { display: none; }
   body.printing-report #reportPrint, body.printing-report #reportPrint * { visibility: visible; color: #000 !important; }
   body.printing-report #reportPrint { position: absolute; left: 0; top: 0; width: 100%; }
 }
+
+/* Open Fixture Library search (Patch → Fixture types) */
+.oflsearch { margin: 6px 0 8px; }
+.oflsearch input { width: 100%; }
+.oflresults { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; max-height: 320px; overflow: auto; }
+.oflrow { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; text-align: left; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line, #333); background: var(--panel2, rgba(255,255,255,.04)); color: inherit; cursor: pointer; }
+.oflrow:hover { border-color: var(--accent, #6af); }
+.oflrow span { opacity: .75; }
+.oflrow small { grid-column: 1 / -1; opacity: .6; }
+
+/* Follow the band by sound (Setup) */
+.snd-row { align-items: center; gap: 8px; margin: 6px 0; }
+.snd-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--panel2); border: 1px solid var(--line); flex: none; transition: background .05s; }
+.snd-dot.on { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.snd-lvl { flex: 1; min-width: 120px; height: 8px; background: #0b0d12; border-radius: 4px; overflow: hidden; }
+.snd-lvl i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3fd27a, #f2b33d 70%, #e05050); }
+.snd-energy { margin: 4px 0 8px 26px; display: flex; flex-direction: column; gap: 6px; }
+.snd-energy .chip.on, .snd-row .chip.on { border-color: var(--accent); color: var(--accent); }
+
+/* Light health (Setup) and the pre-service check */
+.btn.tiny { padding: 2px 7px; font-size: 11px; margin-left: 4px; }
+.linkbtn { background: none; border: none; color: inherit; padding: 0; cursor: pointer; text-decoration: underline dotted; font: inherit; }
+.hl-sum { align-items: center; gap: 12px; margin: 4px 0; }
+.hl-ok { color: var(--go); }
+.hl-bad { color: #ff8a65; }
+.hl-due { color: var(--accent); }
+.hl-tbl td { vertical-align: middle; }
+.hl-row-bad td:first-child { box-shadow: inset 3px 0 #ff8a65; }
+.hl-row-due td:first-child { box-shadow: inset 3px 0 var(--accent); }
+.hl-fault { display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 8px; margin: 1px 4px 1px 0; border-radius: 999px; background: rgba(255,138,101,.14); color: #ffb199; font-size: 12px; }
+.hl-acts { white-space: nowrap; text-align: right; }
+.hl-rem { align-items: center; gap: 8px; margin-top: 8px; }
+.ck-dialog { width: min(560px, 94vw); }
+.ck-count { color: var(--muted); font-size: 13px; }
+.ck-progress { height: 4px; background: var(--panel2); border-radius: 2px; margin: 6px 0 10px; overflow: hidden; }
+.ck-progress i { display: block; height: 100%; background: var(--accent); }
+.ck-name { margin: 4px 0; font-size: 26px; }
+.ck-ok { width: 100%; padding: 16px; font-size: 20px; margin: 8px 0; }
+.ck-probs { display: flex; flex-wrap: wrap; gap: 6px; }
+.oflsearch input, .wz-body .oflsearch input { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; color: var(--text); box-sizing: border-box; }
+#soundBox label.check { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
+#soundBox select { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--text); }

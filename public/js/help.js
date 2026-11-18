@@ -16,6 +16,8 @@ const GUIDES = [
   ['service-order.md', 'Service order, Planning Center, schedule'],
   ['propresenter.md', 'ProPresenter'],
   ['live-effects.md', 'Live control, pads and effects'],
+  ['follow-the-band.md', 'Follow the band by sound'],
+  ['light-health.md', 'Light health and the pre-service check'],
   ['tracks.md', 'Tracks'],
   ['stage-3d.md', '3D stage'],
   ['safety.md', 'Safety, PINs and backups'],

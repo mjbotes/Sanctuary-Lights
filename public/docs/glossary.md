@@ -18,6 +18,7 @@
 | **Flash** | Full brightness while a button is held. |
 | **Follow mode** | Manual / Hybrid / Auto: how much the tracks are in charge. |
 | **GDTF** | A file describing a fixture type; manufacturers publish them. |
+| **Open Fixture Library** | A free, shared list of fixture types (open-fixture-library.org). Search it on the Patch tab. |
 | **Group** | A named set of lights, e.g. *Front wash*. |
 | **Guide cue** | A spoken "Verse", "Chorus" that the band hears a bar before a section. |
 | **Hold** | Ignore the tracks until it's pressed again. |

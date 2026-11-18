@@ -26,6 +26,7 @@ On the **Patch** tab, under **Add lights**:
 
 The built-in types cover common LED pars, dimmers, moving heads and hazers. For anything else:
 
+- **Search the library:** type your light's name in the box under *Fixture types* (e.g. *Chauvet SlimPAR*, *Rogue R2 Wash*, *ADJ Mega Par*). It searches the free **Open Fixture Library** (about 650 lights). Tap your light and tick the mode it is set to. Adding a light needs the internet once; after that it's kept on the computer. Pixel bars and LED panels with many cells are included: all their cells show the light's colour.
 - **Import GDTF / OFL…** (Patch → Fixture types) takes:
   - a `.gdtf` file from the manufacturer or gdtf-share.com
   - an Open Fixture Library `.json` file: on open-fixture-library.org, find your light and choose *Download → OFL JSON*

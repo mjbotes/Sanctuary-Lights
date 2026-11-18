@@ -40,6 +40,8 @@ import './controller.js';
 import './snapshot.js';
 import './takes.js';
 import './reports.js';
+import './sound.js';
+import './health.js';
 import { $, S, on } from './core.js';
 import { startSession } from './access.js';
 import { renderRuntime } from './live.js';

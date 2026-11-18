@@ -1,7 +1,8 @@
 // First-run setup wizard: name, how the lights are connected, which lights there are, and what
 // tells the lights when to change. Opens by itself on a new, empty show (admins only), and from
 // the Setup tab at any time.
-import { $, S, act, h, on, toast } from './core.js';
+import { $, S, act, authHeaders, h, on, toast } from './core.js';
+import { oflPick } from './lighting.js';
 
 const STEPS = ['Welcome', 'Connection', 'Lights', 'Cues from', 'Done'];
 let step = 0;
@@ -63,7 +64,23 @@ function stepConnection() {
 
 function stepLights() {
   const profs = Object.values(S.profiles);
-  const type = h('select', {}, ...profs.map((p) => h('option', { value: p.id }, p.name)));
+  const type = h('select', {}, ...profs.map((p) => h('option', { value: p.id, selected: p.id === choice.profile }, p.name)));
+  // Search the Open Fixture Library; the chosen mode becomes the type to add
+  const results = h('div', { className: 'oflresults' });
+  let timer = null;
+  const find = h('input', { type: 'search', placeholder: 'Not in the list? Search the fixture library: e.g. Chauvet SlimPAR', style: { width: '100%' },
+    oninput: () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const q = find.value.trim();
+        if (q.length < 2) return results.replaceChildren();
+        const j = await fetch(`/api/ofl/search?q=${encodeURIComponent(q)}`, { headers: authHeaders() }).then((r) => r.json()).catch(() => null);
+        if (!j || !j.ok) return results.replaceChildren(h('p', { className: 'hint' }, (j && j.error) || 'Search failed'));
+        results.replaceChildren(...(j.results.length ? j.results.slice(0, 6).map((f) => h('button', { type: 'button', className: 'oflrow',
+          onclick: (e) => oflPick(f, e.currentTarget, (added) => { if (added && added[0]) choice.profile = added[0].id; setTimeout(render, 300); }) },
+        h('b', {}, f.name), h('span', {}, f.manufacturer), h('small', {}, `${f.modes.length} mode${f.modes.length === 1 ? '' : 's'}`))) : [h('p', { className: 'hint' }, 'Nothing found.')]));
+      }, 200);
+    } });
   const count = h('input', { type: 'number', min: 1, max: 64, value: 4, style: { width: '70px' } });
   const name = h('input', { placeholder: 'Name, e.g. Front wash', style: { flex: 1 } });
   const universe = h('input', { type: 'number', min: 1, value: 1, style: { width: '64px' } });
@@ -76,8 +93,9 @@ function stepLights() {
   const list = S.show.fixtures;
   return [
     h('h2', {}, 'Which lights do you have?'),
-    h('p', { className: 'hint' }, 'Add each kind of light. They get DMX addresses one after the other, starting at the first free address: set the lights themselves to the same addresses. Not in the list? Import a GDTF or Open Fixture Library file on the Patch tab later.'),
+    h('p', { className: 'hint' }, 'Add each kind of light. They get DMX addresses one after the other, starting at the first free address: set the lights themselves to the same addresses.'),
     h('div', { className: 'row wrap wz-add' }, count, h('span', {}, '×'), type, name, h('span', { className: 'hint', style: { margin: 0 } }, 'universe'), universe, h('button', { type: 'button', className: 'btn primary', onclick: add }, 'Add')),
+    h('div', { className: 'oflsearch' }, find, results),
     list.length
       ? h('div', { className: 'wz-list' }, ...list.map((f) => h('div', { className: 'wz-fix' },
         h('span', {}, f.name), h('small', {}, `${S.profiles[f.profile] ? S.profiles[f.profile].name : f.profile} · ${f.universe}.${f.address}`),

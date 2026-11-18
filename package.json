@@ -75,7 +75,7 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Sanctuary Lights uses audio inputs for live vocals and auto-tune.",
+        "NSMicrophoneUsageDescription": "Sanctuary Lights uses audio inputs for live vocals, auto-tune and to let the lights follow the band.",
         "NSLocalNetworkUsageDescription": "Sanctuary Lights sends lighting data (Art-Net / sACN) and lets iPads connect on your network."
       },
       "artifactName": "Sanctuary-Lights-mac-${arch}.${ext}"

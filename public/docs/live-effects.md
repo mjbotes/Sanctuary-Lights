@@ -25,7 +25,7 @@ Every group (made on the Program tab) gets a strip on the Live and Songs tabs:
 - **Pulse / Chase / Sparkle / Rainbow / Move:** effects in time with the tempo. *Move* appears for moving heads; the speed menu sets beats per cycle. **More…** lists every effect.
 - **Release live** clears all of it.
 
-**The tempo** comes from **TAP** (or the **T** key), the song's BPM, or MIDI clock from Ableton. Click the BPM number to type one.
+**The tempo** comes from **TAP** (or the **T** key), the song's BPM, MIDI clock from Ableton, or the band itself ([Follow the band by sound](follow-the-band.md)). Click the BPM number to type one.
 
 **Recording:** live colours and effects are saved into the next look or cue you record, so a *Chorus* look can always pulse the back wash on the beat. Fader trims and flashes are never recorded.
 

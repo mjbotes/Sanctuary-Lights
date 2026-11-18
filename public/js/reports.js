@@ -2,7 +2,7 @@
 // and what caused it. Printable.
 import { $, authHeaders, h } from './core.js';
 
-const KIND = { song: '♪', section: '›', part: '◆', cue: '●', blackout: '■', practice: '🎓', take: '⏺', panic: '⚠', problem: '⚠', fixed: '✓' };
+const KIND = { song: '♪', section: '›', part: '◆', cue: '●', blackout: '■', practice: '🎓', take: '⏺', panic: '⚠', problem: '⚠', fixed: '✓', check: '☑' };
 const t = (at) => new Date(at).toTimeString().slice(0, 5);
 const get = (u) => fetch(u, { headers: authHeaders() }).then((r) => r.json());
 

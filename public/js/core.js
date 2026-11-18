@@ -121,6 +121,7 @@ function connect() {
     S.history = d.history || {};
     S.version = d.version || '';
     S.update = d.update || null;
+    S.health = d.health || null;
     for (const id of [...S.sel]) if (!S.show.fixtures.some((f) => f.id === id)) S.sel.delete(id);
     $('#outErr').textContent = d.outputError || '';
     emit('state', d);

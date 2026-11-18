@@ -184,3 +184,44 @@ test('see_stage: a picture (2D plan without an app window, 3D from a window) and
     t.done();
   }
 });
+
+test('fixture library and light health tools', async () => {
+  const t = await start();
+  const key = 'chauvet-dj/slim-par-64';
+  const srv = http.createServer((req, res) => res.end(JSON.stringify({
+    name: 'SlimPAR 64',
+    availableChannels: { Red: { capability: { type: 'ColorIntensity', color: 'Red' } }, Green: { capability: { type: 'ColorIntensity', color: 'Green' } }, Blue: { capability: { type: 'ColorIntensity', color: 'Blue' } }, Dimmer: { capability: { type: 'Intensity' } } },
+    modes: [{ name: '3-channel', channels: ['Red', 'Green', 'Blue'] }, { name: '4-channel', channels: ['Red', 'Green', 'Blue', 'Dimmer'] }],
+  })));
+  await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
+  try {
+    t.app.mcp.configure({ enabled: true });
+    t.app.ofl.base = `http://127.0.0.1:${srv.address().port}/`;
+    const found = JSON.parse((await t.call('find_fixture_type', { query: 'chauvet slimpar 64' })).text);
+    assert.strictEqual(found[0].key, key);
+    assert.strictEqual(found[0].exactMatch, true);
+    let r = await t.call('add_fixture_type', { key, modes: ['4'] });
+    assert.ok(r.error && /cannot/.test(r.text), 'operator may not change fixture types');
+    t.app.mcp.configure({ role: 'admin' });
+    r = await t.call('add_fixture_type', { key, modes: ['4'] });
+    const added = JSON.parse(r.text).added;
+    assert.strictEqual(added.length, 1);
+    assert.match(added[0].name, /SlimPAR 64 · 4-channel \(4ch\)/);
+    assert.ok(t.app.engine.show.profiles[added[0].profile]);
+    r = await t.call('add_fixture_type', { key, modes: ['12'] });
+    assert.ok(r.error && /Modes: 3-channel, 4-channel/.test(r.text));
+    // Light health
+    const light = t.app.engine.show.fixtures[1];
+    r = await t.call('light_problem', { light: light.name, problem: 'Flickers' });
+    assert.match(r.text, /noted/);
+    let hl = JSON.parse((await t.call('get_light_health')).text);
+    assert.deepStrictEqual(hl.problems.map((p) => p.light), [light.name]);
+    assert.ok(light.name in hl.hoursOn);
+    await t.call('light_problem', { light: light.name, fixed: true });
+    hl = JSON.parse((await t.call('get_light_health')).text);
+    assert.deepStrictEqual(hl.problems, []);
+  } finally {
+    srv.close();
+    t.done();
+  }
+});

@@ -18,6 +18,7 @@
 - Does it come on in a strange colour, or move by itself? The light's **mode** (number of channels) doesn't match the fixture type. Change the mode on the light, or the type on the Patch tab.
 - Is the light aimed at a screen with **Block** on? It's switched off on purpose (it shows red in 3D).
 - Check the DMX cable and the terminator at the end of the chain.
+- Still broken? Note it with **Problem…** in Setup → [Light health](light-health.md), so it's on the list (and in the service report) until it's fixed.
 
 ## The tracks don't change the lights
 

@@ -34,7 +34,7 @@ function render() {
     h('p', { className: 'hint' }, `This is version ${S.version || '?'}. `, u ? say(u) : 'Updates are checked automatically in the installed desktop app.'),
     u ? h('div', { className: 'row wrap' },
       h('button', { className: 'btn small', disabled: !admin, onclick: () => act('update.check').then((r) => r && toast('Checking for updates…')) }, 'Check now'),
-      u.status === 'ready' || u.status === 'manual' ? h('button', { className: 'btn small primary', disabled: !admin, onclick: () => act('update.install') }, u.status === 'ready' ? 'Restart and install' : 'Download') : null) : null);
+      u.status === 'ready' || u.status === 'manual' ? h('button', { className: 'btn small primary', disabled: !admin, onclick: () => act('update.install') }, u.status === 'ready' ? 'Restart and install' : 'Download') : null) : '');
 }
 
 on('state', render);

@@ -18,7 +18,7 @@ This guide is for the person responsible for lights on a Sunday. It assumes the 
    - **MIDI in:** ask the tracks operator to play a few seconds of a song; it should show what arrived.
    - **ProPresenter** should say *Connected*.
    - **Audio** (if the app plays the tracks): play a test tone on each output.
-3. Tap **Blink every light in turn** and watch the stage. Each light should blink white when its name is shown. A light that doesn't blink isn't getting DMX: check its cable, address and power.
+3. Run the **pre-service check** (Setup → Light health): each light blinks in turn and you tap **Works** or what's wrong. Problems are kept on a list until someone fixes them. See [Light health](light-health.md). A light that doesn't blink isn't getting DMX: check its cable, address and power.
 4. Tap **Pre-service** (if you have that part), or show your walk-in look.
 
 ## During the service

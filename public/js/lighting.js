@@ -35,6 +35,11 @@ $('#fixtureFile').addEventListener('change', async (e) => {
       toast(`Could not read ${file.name}`, true);
     }
   }
+  chooseModes(found);
+});
+
+// Tick the modes to add (from files or the library)
+export function chooseModes(found, onDone) {
   if (!found.length) return;
   $('#fixtureList').replaceChildren(...found.map((p, i) => {
     const box = h('input', { type: 'checkbox', checked: found.length <= 3 });
@@ -49,8 +54,45 @@ $('#fixtureFile').addEventListener('change', async (e) => {
     if (!chosen.length) return;
     const r = await act('profile.import', { profiles: chosen });
     if (r) toast(`${r.added.length} fixture type${r.added.length === 1 ? '' : 's'} added. Choose them when you add lights.`);
+    if (r && onDone) onDone(r.added);
   };
   dlg.showModal();
+}
+
+// ----- Open Fixture Library search ---------------------------------------------------
+let oflTimer = null;
+async function oflSearch() {
+  const q = $('#oflQuery').value.trim();
+  const box = $('#oflResults');
+  if (q.length < 2) return box.replaceChildren();
+  try {
+    const j = await fetch(`/api/ofl/search?q=${encodeURIComponent(q)}`, { headers: authHeaders() }).then((r) => r.json());
+    if (!j.ok) return box.replaceChildren(h('p', { className: 'hint' }, j.error || 'Search failed'));
+    if (!j.results.length) return box.replaceChildren(h('p', { className: 'hint' }, `Nothing found for "${q}". Try only the model name, or make the fixture type by hand below.`));
+    const close = !j.results[0].exact;
+    box.replaceChildren(
+      ...(close ? [h('p', { className: 'hint' }, `No exact match for "${q}". Close ones:`)] : []),
+      ...j.results.slice(0, 12).map((f) => h('button', { className: 'oflrow', title: f.modes.join(', '), onclick: (e) => oflPick(f, e.currentTarget) },
+        h('b', {}, f.name), h('span', {}, f.manufacturer), h('small', {}, `${f.categories.join(', ')} · ${f.modes.length} mode${f.modes.length === 1 ? '' : 's'}`))));
+  } catch {
+    box.replaceChildren(h('p', { className: 'hint' }, 'Search failed'));
+  }
+}
+export async function oflPick(f, btn, onDone) {
+  if (btn) btn.disabled = true;
+  try {
+    const j = await fetch('/api/ofl/profiles', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ key: f.key }) }).then((r) => r.json());
+    if (!j.ok) return toast(j.error, true);
+    chooseModes(j.profiles, onDone);
+  } catch {
+    toast('Could not get that fixture', true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+$('#oflQuery').addEventListener('input', () => {
+  clearTimeout(oflTimer);
+  oflTimer = setTimeout(oflSearch, 200);
 });
 
 // ----- tracking cue list --------------------------------------------------------------
